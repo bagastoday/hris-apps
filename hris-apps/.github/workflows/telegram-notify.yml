@@ -1,0 +1,26 @@
+name: Telegram Push Notification
+
+on:
+  push:
+    branches:
+      - '**' # Memantau semua branch
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Notification to Telegram
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            🚀 *Notifikasi Push Baru di HRIS Apps*
+
+            👤 *Author:* ${{ github.actor }}
+            🌿 *Branch:* `${{ github.ref_name }}`
+            📝 *Commit Message:* 
+            "${{ github.event.head_commit.message }}"
+
+            🔗 [Lihat Perubahan di GitHub](${{ github.event.head_commit.url }})
+          format: markdown

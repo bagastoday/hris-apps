@@ -15,7 +15,7 @@
         </p>
         
         <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-16">
-            <a href="#trial" class="px-8 py-3.5 text-base font-medium text-white bg-corporate-blue hover:bg-corporate-hover hover:-translate-y-1 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl w-full sm:w-auto">
+            <a href="{{ route('test-page') }}" class="px-8 py-3.5 text-base font-medium text-white bg-corporate-blue hover:bg-corporate-hover hover:-translate-y-1 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl w-full sm:w-auto">
                 Mulai Uji Coba Gratis
             </a>
             <a href="#demo-video" class="px-8 py-3.5 text-base font-medium text-navy-900 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 hover:-translate-y-1 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md w-full sm:w-auto group">

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Git Test Pa</title>
+    <title>Git Test P</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
 

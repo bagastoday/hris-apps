@@ -8,7 +8,7 @@
     <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+CjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiIGZpbGw9Im5vbmUiLz4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgwLCAwLCAwLCAwLjA1KSIvPgo8L3N2Zz4=')] opacity-50"></div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative pt-20 pb-16 lg:pt-32 lg:pb-24 text-center">
         <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-navy-900 tracking-tight mb-6 max-w-4xl mx-auto leading-tight">
-            Automasi Manajemen SDM, Penggajian, dan Absensi dalam <span class="text-corporate-blue">Satu Ekosistem</span>
+            Automasi Manajemen SDM, dan Absensi dalam <span class="text-corporate-blue">Satu Ekosistem</span>
         </h1>
         <p class="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto">
             Tingkatkan efisiensi operasional perusahaan Anda dengan platform HRIS terintegrasi yang dirancang khusus untuk skala enterprise.

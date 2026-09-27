@@ -22,6 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -33,6 +34,19 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+    public function isHr(): bool
+{
+    return $this->role === 'hr';
+}
+
+public function isKaryawan(): bool
+{
+    return $this->role === 'karyawan';
+}
+public function employee()
+{
+    return $this->hasOne(Employee::class);
+}
 
     /**
      * Get the attributes that should be cast.

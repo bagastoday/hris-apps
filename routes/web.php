@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password;
+use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\LeaveController;
+use App\Http\Controllers\PositionController;
+
 
 // ========== AUTH ==========
 Route::get('/login', function () {
@@ -105,15 +109,24 @@ Route::post('/change-password', function (Request $request) {
     return redirect()->route('login')->with('success', 'Password berhasil diubah. Silakan login dengan password baru.');
 })->name('password.change.submit');
 
+
+
+// ========== CUTI (HR) ==========
+Route::get('/leaves', [LeaveController::class, 'index'])
+    ->name('leaves.index')
+    ->middleware('role:hr');
+
+Route::post('/leaves/{leave}/approve', [LeaveController::class, 'approve'])
+    ->name('leaves.approve')
+    ->middleware('role:hr');
+
+Route::post('/leaves/{leave}/reject', [LeaveController::class, 'reject'])
+    ->name('leaves.reject')
+    ->middleware('role:hr');
+
+
 // ========== DASHBOARD HR ==========
 Route::get('/', function () {
-    if (!Auth::check()) {
-        return redirect()->route('login');
-    }
-    if (Auth::user()->role !== 'hr') {
-        return redirect()->route('karyawan.home');
-    }
-
     $totalEmployees = \App\Models\Employee::where('employment_status', 'aktif')->count();
     $totalDepartments = \App\Models\Department::where('is_active', true)->count();
     $hadirHariIni = \App\Models\Attendance::whereDate('date', today())->where('status', 'hadir')->count();
@@ -137,45 +150,28 @@ Route::get('/', function () {
         'cutiPending',
         'pendingLeaves'
     ));
-})->name('dashboard');
+})->name('dashboard')->middleware('role:hr');
 
 // ========== PORTAL KARYAWAN ==========
 Route::get('/karyawan', function () {
-    if (!Auth::check()) {
-        return redirect()->route('login');
-    }
-    if (Auth::user()->role !== 'karyawan') {
-        return redirect()->route('dashboard');
-    }
     return view('karyawan.home');
-})->name('karyawan.home');
+})->name('karyawan.home')->middleware('role:karyawan');
 
 // ========== PEGAWAI (HR only) ==========
 Route::get('/employees', function () {
-    if (!Auth::check() || Auth::user()->role !== 'hr') {
-        return redirect()->route('login');
-    }
     $employees = \App\Models\Employee::with(['department', 'position'])->latest()->get();
     return view('admin.employees.index', compact('employees'));
-})->name('employees.index');
+})->name('employees.index')->middleware('role:hr');
 
 Route::get('/employees/create', function () {
-    if (!Auth::check() || Auth::user()->role !== 'hr') {
-        return redirect()->route('login');
-    }
     $departments = \App\Models\Department::where('is_active', true)->get();
     $positions = \App\Models\Position::where('is_active', true)->get();
     return view('admin.employees.create', compact('departments', 'positions'));
-})->name('employees.create');
+})->name('employees.create')->middleware('role:hr');
 
 Route::post('/employees', function (Request $request) {
-    if (!Auth::check() || Auth::user()->role !== 'hr') {
-        return redirect()->route('login');
-    }
-
     $data = $request->validate([
         'full_name' => 'required|string|max:255',
-        'nik' => 'required|string|unique:employees,nik',
         'email' => 'nullable|email|unique:employees,email|unique:users,email',
         'phone' => 'nullable|string|max:20',
         'gender' => 'nullable|in:laki-laki,perempuan',
@@ -196,9 +192,13 @@ Route::post('/employees', function (Request $request) {
         'password.numbers' => 'Password harus mengandung angka.',
     ]);
 
-    $last = \App\Models\Employee::orderBy('id', 'desc')->first();
+    // Generate EMP-XXX (tidak reuse nomor yang sudah dihapus)
+    $last = \App\Models\Employee::orderByRaw("CAST(REPLACE(employee_code, 'EMP-', '') AS UNSIGNED) DESC")->first();
     $num = $last ? ((int) str_replace('EMP-', '', $last->employee_code)) + 1 : 1;
-    $data['employee_code'] = 'EMP-' . str_pad($num, 3, '0', STR_PAD_LEFT);
+    $code = 'EMP-' . str_pad($num, 3, '0', STR_PAD_LEFT);
+
+    $data['employee_code'] = $code;
+    $data['nik'] = $code; // NIK = kode pegawai otomatis
 
     if ($request->boolean('create_account') && $request->filled('email') && $request->filled('password')) {
         $user = \App\Models\User::create([
@@ -214,5 +214,19 @@ Route::post('/employees', function (Request $request) {
 
     \App\Models\Employee::create($data);
 
-    return redirect()->route('employees.index')->with('success', 'Pegawai berhasil ditambahkan.');
-})->name('employees.store');
+    return redirect()->route('employees.index')->with('success', "Pegawai berhasil ditambahkan dengan kode {$code}.");
+})->name('employees.store')->middleware('role:hr');
+
+// ========== DEPARTEMEN (HR only) ==========
+Route::resource('departments', DepartmentController::class)
+    ->except(['show'])
+    ->middleware('role:hr');
+
+// ========== JABATAN (nested di Departemen, HR only) ==========
+Route::post('/departments/{department}/positions', [PositionController::class, 'store'])
+    ->name('positions.store')
+    ->middleware('role:hr');
+
+Route::delete('/positions/{position}', [PositionController::class, 'destroy'])
+    ->name('positions.destroy')
+    ->middleware('role:hr');

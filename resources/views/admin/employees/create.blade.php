@@ -25,24 +25,19 @@
         <form method="POST" action="{{ route('employees.store') }}" class="space-y-5">
             @csrf
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div class="sm:col-span-2">
-                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Nama Lengkap *</label>
-                    <input type="text" name="full_name" value="{{ old('full_name') }}" required
-                           class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600">
-                </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-slate-700 mb-1.5">Nama Lengkap *</label>
+            <input type="text" name="full_name" value="{{ old('full_name') }}" required
+                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600">
+        </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1.5">NIK *</label>
-                    <input type="text" name="nik" value="{{ old('nik') }}" required
-                           class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
-                    <input type="email" name="email" value="{{ old('email') }}"
-                           class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600">
-                </div>
+        <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
+            <input type="email" name="email" value="{{ old('email') }}"
+                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600">
+            <p class="text-xs text-slate-400 mt-1">NIK / Kode pegawai akan digenerate otomatis (EMP-001, EMP-002, ...)</p>
+        </div>
 
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1.5">No. Telepon</label>

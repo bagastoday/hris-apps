@@ -318,6 +318,52 @@ Route::post('/leaves/{leave}/reject', [LeaveController::class, 'reject'])
     ->name('leaves.reject')
     ->middleware('role:hr');
 
+// ========== LAPORAN (angka kehadiran masih DUMMY) ==========
+Route::get('/reports', function (Request $request) {
+    $period = $request->input('period', now()->format('Y-m'));
+
+    $employees = \App\Models\Employee::active()
+        ->with('department')
+        ->orderBy('employee_code')
+        ->get();
+
+    // DUMMY: angka dibuat dari id pegawai supaya tetap sama tiap refresh.
+    // Nanti ganti dengan hitungan dari tabel attendances.
+    $rekap = $employees->map(function ($e) {
+        $hadir = 18 + ($e->id % 4);
+        $terlambat = $e->id % 4;
+        $izin = $e->id % 3;
+        $alpha = $e->id % 5 === 0 ? 1 : 0;
+        $total = $hadir + $terlambat + $izin + $alpha;
+
+        return [
+            'name' => $e->full_name,
+            'code' => $e->employee_code,
+            'dept' => $e->department->name ?? 'Tanpa Departemen',
+            'hadir' => $hadir,
+            'terlambat' => $terlambat,
+            'izin' => $izin,
+            'alpha' => $alpha,
+            'persen' => round(($hadir + $terlambat) / $total * 100),
+        ];
+    });
+
+    $perDepartemen = $rekap->groupBy('dept')
+        ->map(fn ($rows, $name) => ['name' => $name, 'percent' => round($rows->avg('persen'))])
+        ->sortByDesc('percent')
+        ->values();
+
+    $stats = [
+        'total_pegawai' => $employees->count(),
+        'rata_kehadiran' => $rekap->count() ? round($rekap->avg('persen')) : 0,
+        'total_terlambat' => $rekap->sum('terlambat'),
+        'cuti_disetujui' => \App\Models\Leave::where('status', 'approved')->count(),
+    ];
+
+    return view('admin.reports.index', compact('period', 'stats', 'perDepartemen', 'rekap'));
+})->name('reports.index')->middleware('role:hr');
+
+
 // ========== ABSENSI (HR, tampilan rekap) ==========
 Route::get('/attendances', function (Request $request) {
     $date = $request->input('date', today()->toDateString());

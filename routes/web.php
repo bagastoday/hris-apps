@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password;
@@ -23,13 +24,11 @@ Route::get('/login', function () {
 })->name('login');
 
 Route::post('/login', function (Request $request) {
-    // Terima field "login" (baru) atau "email" (form lama)
     $request->merge(['login' => $request->input('login', $request->input('email'))]);
 
     $request->validate([
         'login' => ['required', 'string', 'max:255'],
         'password' => ['required', 'string'],
-        
     ]);
 
     $login = trim($request->login);
@@ -42,26 +41,19 @@ Route::post('/login', function (Request $request) {
         ]);
     }
 
-    // Tentukan email akun: langsung dari input, atau lewat NIK
     if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
         $email = $login;
     } else {
         $nik = strtoupper($login);
-
-        // 1) Cari NIK di akun user langsung (akun admin/HR mandiri)
         $user = \App\Models\User::where('nik', $nik)->first();
-
-        // 2) Kalau tidak ada, cari lewat NIK pegawai
         if (!$user) {
             $employee = \App\Models\Employee::where('nik', $nik)->first();
             $user = $employee?->user_id ? \App\Models\User::find($employee->user_id) : null;
         }
-
         $email = $user?->email;
     }
 
     if ($email && Auth::attempt(['email' => $email, 'password' => $request->password], $request->boolean('remember'))) {
-        // Pegawai nonaktif tidak boleh masuk (akun HR tanpa data pegawai tidak terpengaruh)
         $employee = Auth::user()->employee;
         if ($employee && !$employee->isActive()) {
             Auth::logout();
@@ -94,6 +86,38 @@ Route::post('/logout', function (Request $request) {
     $request->session()->regenerateToken();
     return redirect()->route('login');
 })->name('logout');
+
+// ========== PROFIL ==========
+Route::get('/profile', function () {
+    if (!Auth::check()) {
+        return redirect()->route('login');
+    }
+    return view('auth.profile', ['user' => Auth::user()]);
+})->name('profile.edit');
+
+Route::post('/profile', function (Request $request) {
+    if (!Auth::check()) {
+        return redirect()->route('login');
+    }
+
+    $user = Auth::user();
+
+    $data = $request->validate([
+        'name' => 'required|string|max:255',
+        'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+    ]);
+
+    if ($request->hasFile('avatar')) {
+        if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+            Storage::disk('public')->delete($user->avatar);
+        }
+        $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
+    }
+
+    $user->update($data);
+
+    return back()->with('success', 'Profil berhasil diperbarui.');
+})->name('profile.update');
 
 // ========== UBAH PASSWORD ==========
 Route::get('/change-password', function () {
@@ -200,6 +224,7 @@ Route::post('/employees', function (Request $request) {
         'position_id' => 'nullable|exists:positions,id',
         'employment_status' => 'required|in:aktif,kontrak,magang,resign,cuti',
     ]);
+
     if (!empty($data['position_id'])) {
         $position = \App\Models\Position::find($data['position_id']);
         if ($position->department_id != ($data['department_id'] ?? null)) {
@@ -208,19 +233,17 @@ Route::post('/employees', function (Request $request) {
             ])->withInput();
         }
     }
-    // Generate EMP-XXX (tidak reuse nomor yang sudah dihapus)
+
     $last = \App\Models\Employee::orderByRaw("CAST(REPLACE(employee_code, 'EMP-', '') AS UNSIGNED) DESC")->first();
     $num = $last ? ((int) str_replace('EMP-', '', $last->employee_code)) + 1 : 1;
     $code = 'EMP-' . str_pad($num, 3, '0', STR_PAD_LEFT);
 
     $data['employee_code'] = $code;
-    $data['nik'] = $code; // NIK = kode pegawai otomatis
+    $data['nik'] = $code;
 
-    // Akun login dibuat otomatis dengan password default
     DB::transaction(function () use ($data) {
         $user = \App\Models\User::create([
             'name' => $data['full_name'],
-            // Kalau email kosong, pakai email internal (login tetap bisa pakai NIK)
             'email' => $data['email'] ?? strtolower($data['employee_code']) . '@talenta.local',
             'password' => Hash::make(\App\Models\Employee::DEFAULT_PASSWORD),
             'role' => 'karyawan',
@@ -249,7 +272,6 @@ Route::put('/employees/{employee}', function (Request $request, \App\Models\Empl
         'employment_status' => 'required|in:aktif,nonaktif',
     ]);
 
-    // Jabatan harus milik departemen yang dipilih
     if (!empty($data['position_id'])) {
         $position = \App\Models\Position::find($data['position_id']);
         if ($position->department_id != ($data['department_id'] ?? null)) {
@@ -260,11 +282,9 @@ Route::put('/employees/{employee}', function (Request $request, \App\Models\Empl
     if ($data['employment_status'] === 'nonaktif') {
         $data['employment_status'] = 'resign';
     } else {
-        // Kalau tetap aktif (aktif/kontrak/magang/cuti), pertahankan jenis statusnya
         $data['employment_status'] = $employee->isActive() ? $employee->employment_status : 'aktif';
     }
 
-    // Nama & NIK sengaja tidak ikut diupdate
     $employee->update($data);
 
     return redirect()->route('employees.index')->with('success', 'Data pegawai berhasil diperbarui.');
@@ -277,7 +297,6 @@ Route::post('/employees/{employee}/reset-password', function (\App\Models\Employ
         $employee->user->update(['password' => Hash::make($default)]);
         $message = "Password {$employee->full_name} direset ke: {$default}";
     } else {
-        // Pegawai lama yang belum punya akun: dibuatkan sekarang
         $user = \App\Models\User::create([
             'name' => $employee->full_name,
             'email' => $employee->email ?? strtolower($employee->employee_code) . '@talenta.local',
@@ -291,12 +310,11 @@ Route::post('/employees/{employee}/reset-password', function (\App\Models\Employ
     return back()->with('success', $message);
 })->name('employees.reset-password')->middleware('role:hr');
 
-// ========== DEPARTEMEN (HR only) ==========
+// ========== DEPARTEMEN ==========
 Route::resource('departments', DepartmentController::class)
     ->except(['show'])
     ->middleware('role:hr');
 
-// ========== JABATAN (nested di Departemen, HR only) ==========
 Route::post('/departments/{department}/positions', [PositionController::class, 'store'])
     ->name('positions.store')
     ->middleware('role:hr');
@@ -305,7 +323,7 @@ Route::delete('/positions/{position}', [PositionController::class, 'destroy'])
     ->name('positions.destroy')
     ->middleware('role:hr');
 
-// ========== CUTI (HR only) ==========
+// ========== CUTI ==========
 Route::get('/leaves', [LeaveController::class, 'index'])
     ->name('leaves.index')
     ->middleware('role:hr');
@@ -318,7 +336,7 @@ Route::post('/leaves/{leave}/reject', [LeaveController::class, 'reject'])
     ->name('leaves.reject')
     ->middleware('role:hr');
 
-// ========== LAPORAN (angka kehadiran masih DUMMY) ==========
+// ========== LAPORAN ==========
 Route::get('/reports', function (Request $request) {
     $period = $request->input('period', now()->format('Y-m'));
 
@@ -327,8 +345,6 @@ Route::get('/reports', function (Request $request) {
         ->orderBy('employee_code')
         ->get();
 
-    // DUMMY: angka dibuat dari id pegawai supaya tetap sama tiap refresh.
-    // Nanti ganti dengan hitungan dari tabel attendances.
     $rekap = $employees->map(function ($e) {
         $hadir = 18 + ($e->id % 4);
         $terlambat = $e->id % 4;
@@ -363,8 +379,7 @@ Route::get('/reports', function (Request $request) {
     return view('admin.reports.index', compact('period', 'stats', 'perDepartemen', 'rekap'));
 })->name('reports.index')->middleware('role:hr');
 
-
-// ========== ABSENSI (HR, tampilan rekap) ==========
+// ========== ABSENSI ==========
 Route::get('/attendances', function (Request $request) {
     $date = $request->input('date', today()->toDateString());
     $departmentId = $request->input('department_id');

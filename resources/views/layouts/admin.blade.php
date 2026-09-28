@@ -85,6 +85,7 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                 Pegawai
             </a>
+
             <a href="{{ route('departments.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
                 {{ request()->is('departments*') ? 'bg-white text-brand-900 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
@@ -133,21 +134,116 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-2 sm:gap-3">
-                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-xs font-medium text-slate-600">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    admin
+            {{-- Tombol Profil + Popup --}}
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open" type="button"
+                        class="group flex items-center gap-2 sm:gap-2.5 pl-1.5 pr-2 sm:pr-3 py-1.5 rounded-full border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 shadow-sm transition-all"
+                        :class="open && 'border-brand-300 bg-brand-50/60 ring-2 ring-brand-100'">
+                    <div class="relative shrink-0">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 overflow-hidden flex items-center justify-center text-xs font-bold uppercase text-white ring-2 ring-white shadow-sm">
+                            @if(auth()->user()->avatar ?? false)
+                                <img src="{{ asset('storage/' . auth()->user()->avatar) }}" class="w-full h-full object-cover" alt="">
+                            @else
+                                {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
+                            @endif
+                        </div>
+                        <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-white"></span>
+                    </div>
+                    <span class="hidden sm:block text-left leading-tight">
+                        <span class="block text-xs font-semibold text-slate-800 max-w-[110px] truncate">{{ auth()->user()->name ?? 'Profil' }}</span>
+                        <span class="block text-[10px] text-slate-400 uppercase tracking-wide">{{ auth()->user()->role ?? '-' }}</span>
+                    </span>
+                    <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 shrink-0"
+                         :class="open && 'rotate-180 text-brand-600'"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+
+                <div x-show="open"
+                     @click.outside="open = false"
+                     x-cloak
+                     x-transition:enter="transition ease-out duration-150"
+                     x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                     x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-100"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 scale-95"
+                     class="absolute right-0 mt-2.5 w-72 origin-top-right bg-white rounded-2xl ring-1 ring-slate-900/5 shadow-xl shadow-slate-300/40 z-50 overflow-hidden">
+
+                    {{-- Header --}}
+                    <div class="relative bg-gradient-to-br from-brand-600 to-brand-800 px-5 py-4 text-white overflow-hidden">
+                        <div class="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-white/10"></div>
+                        <div class="relative z-10 flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-full bg-white/15 overflow-hidden flex items-center justify-center text-lg font-bold uppercase shrink-0 ring-2 ring-white/30">
+                                @if(auth()->user()->avatar ?? false)
+                                    <img src="{{ asset('storage/' . auth()->user()->avatar) }}" class="w-full h-full object-cover" alt="">
+                                @else
+                                    {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
+                                @endif
+                            </div>
+                            <div class="min-w-0">
+                                <p class="font-semibold truncate">{{ auth()->user()->name }}</p>
+                                <p class="text-xs text-blue-100/80 truncate">{{ auth()->user()->email }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Data singkat --}}
+                    <div class="px-5 py-3.5 flex items-center gap-2 border-b border-slate-100">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-brand-50 text-brand-700">
+                            {{ auth()->user()->role ?? '-' }}
+                        </span>
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-50 text-slate-500">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            {{ auth()->user()->nik ?? auth()->user()->employee?->employee_code ?? auth()->user()->id }}
+                        </span>
+                        @if(auth()->user()->employee?->department)
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-50 text-slate-500 truncate">
+                            {{ auth()->user()->employee->department->name }}
+                        </span>
+                        @endif
+                    </div>
+
+                    {{-- Menu --}}
+                    <div class="px-2 py-2 space-y-0.5">
+                        <a href="{{ route('profile.edit') }}"
+                           class="group/item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-brand-50/70 transition-colors">
+                            <span class="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center shrink-0 group-hover/item:bg-brand-100 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </svg>
+                            </span>
+                            <span class="font-medium">Edit Profil</span>
+                            <svg class="w-3.5 h-3.5 text-slate-300 ml-auto opacity-0 -translate-x-1 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </a>
+                        <a href="{{ route('password.change') }}"
+                           class="group/item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-brand-50/70 transition-colors">
+                            <span class="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center shrink-0 group-hover/item:bg-brand-100 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                                </svg>
+                            </span>
+                            <span class="font-medium">Ubah Password</span>
+                            <svg class="w-3.5 h-3.5 text-slate-300 ml-auto opacity-0 -translate-x-1 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </a>
+
+                        <div class="my-1.5 border-t border-slate-100"></div>
+
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit"
+                                    class="group/item flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                <span class="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center shrink-0 group-hover/item:bg-red-100 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                    </svg>
+                                </span>
+                                <span class="font-medium">Keluar</span>
+                            </button>
+                        </form>
+                    </div>
                 </div>
-                <form method="POST" action="{{ route('logout') }}" class="inline">
-                    @csrf
-                    <button type="submit" class="text-xs font-medium text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition">
-                        Keluar
-                    </button>
-                </form>
-                <a href="#" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-sm transition">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    Tambah Pegawai
-                </a>
             </div>
         </header>
 

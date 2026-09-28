@@ -45,23 +45,12 @@
             background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 500 60' preserveAspectRatio='none'%3E%3Cpath fill='%23ffffff' d='M0,30 C125,60 250,0 375,30 C440,45 470,38 500,30 L500,60 L0,60 Z'/%3E%3C/svg%3E") no-repeat bottom;
             background-size: cover;
         }
-        .page-bg {
-            background-color: #f8fafc;
-            background-image:
-                radial-gradient(circle at 1px 1px, rgba(30,58,138,0.08) 1px, transparent 0);
-            background-size: 22px 22px;
-        }
     </style>
 </head>
-<body class="font-sans antialiased page-bg min-h-screen flex flex-col relative">
-
-    {{-- Blob warna brand yang di-blur untuk kedalaman, senada dengan aksen lingkaran di banner login --}}
-    <div class="pointer-events-none fixed -top-24 -left-24 w-96 h-96 rounded-full bg-brand-300/30 blur-3xl"></div>
-    <div class="pointer-events-none fixed top-1/3 -right-32 w-[28rem] h-[28rem] rounded-full bg-brand-400/20 blur-3xl"></div>
-    <div class="pointer-events-none fixed -bottom-32 left-1/4 w-96 h-96 rounded-full bg-brand-200/40 blur-3xl"></div>
+<body class="font-sans antialiased bg-slate-50 min-h-screen flex flex-col">
 
     {{-- Mini topbar, senada dengan identitas brand di sidebar/login --}}
-    <div class="relative z-10 px-4 sm:px-6 h-16 flex items-center justify-between bg-white/70 backdrop-blur-md border-b border-slate-200/70 shrink-0">
+    <div class="px-4 sm:px-6 h-16 flex items-center justify-between bg-white border-b border-slate-200 shrink-0">
         <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center shadow-sm shadow-brand-600/30">
                 <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -78,8 +67,8 @@
         </a>
     </div>
 
-    <div class="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6">
-        <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl shadow-slate-300/40 border border-slate-100 overflow-hidden">
+    <div class="flex-1 flex items-center justify-center p-4 sm:p-6">
+        <div class="w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
 
             {{-- Banner biru dengan aksen gelombang, senada dengan layout admin & kartu login --}}
             <div class="wave-banner bg-gradient-to-br from-brand-600 to-brand-800 px-6 pt-6 pb-10 text-center text-white">

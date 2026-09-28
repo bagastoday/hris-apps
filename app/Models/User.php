@@ -22,6 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'nik',
+        'avatar',
         'password',
         'role',
     ];
@@ -43,6 +44,13 @@ class User extends Authenticatable
 public function isKaryawan(): bool
 {
     return $this->role === 'karyawan';
+}
+public function avatarUrl(): string
+{
+    if ($this->avatar) {
+        return asset('storage/' . $this->avatar);
+    }
+    return '';
 }
 public function employee()
 {

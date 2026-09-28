@@ -12,6 +12,7 @@ use Illuminate\Validation\Rules\Password;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\PositionController;
+use App\Http\Controllers\KaryawanAttendanceController;
 
 // ========== AUTH ==========
 Route::get('/login', function () {
@@ -195,10 +196,22 @@ Route::get('/', function () {
     ));
 })->name('dashboard')->middleware('role:hr');
 
-// ========== PORTAL KARYAWAN ==========
-Route::get('/karyawan', function () {
-    return view('karyawan.home');
-})->name('karyawan.home')->middleware('role:karyawan');
+// ========== PORTAL KARYAWAN & ABSENSI REALTIME ==========
+Route::get('/karyawan', [KaryawanAttendanceController::class, 'index'])
+    ->name('karyawan.home')
+    ->middleware('role:karyawan,hr');
+
+Route::get('/karyawan/absensi', [KaryawanAttendanceController::class, 'index'])
+    ->name('karyawan.attendance')
+    ->middleware('role:karyawan,hr');
+
+Route::post('/karyawan/absensi/check-in', [KaryawanAttendanceController::class, 'checkIn'])
+    ->name('karyawan.attendance.checkin')
+    ->middleware('role:karyawan,hr');
+
+Route::post('/karyawan/absensi/check-out', [KaryawanAttendanceController::class, 'checkOut'])
+    ->name('karyawan.attendance.checkout')
+    ->middleware('role:karyawan,hr');
 
 // ========== PEGAWAI (HR only) ==========
 Route::get('/employees', function () {

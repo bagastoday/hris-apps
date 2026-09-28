@@ -95,7 +95,7 @@ Route::get('/profile', function () {
     return view('auth.profile', ['user' => Auth::user()]);
 })->name('profile.edit');
 
-Route::post('/profile', function (Request $request) {
+Route::match(['post', 'put'], '/profile', function (Request $request) {
     if (!Auth::check()) {
         return redirect()->route('login');
     }
@@ -267,28 +267,50 @@ Route::get('/employees/{employee}/edit', function (\App\Models\Employee $employe
 
 Route::put('/employees/{employee}', function (Request $request, \App\Models\Employee $employee) {
     $data = $request->validate([
+        'full_name' => 'required|string|max:255',
+        'email' => 'nullable|email|unique:employees,email,' . $employee->id . '|unique:users,email,' . ($employee->user_id ?? 0),
+        'phone' => 'nullable|string|max:20',
+        'gender' => 'nullable|in:laki-laki,perempuan',
+        'birth_date' => 'nullable|date',
+        'join_date' => 'required|date',
         'department_id' => 'nullable|exists:departments,id',
         'position_id' => 'nullable|exists:positions,id',
-        'employment_status' => 'required|in:aktif,nonaktif',
+        'employment_status' => 'required|in:aktif,kontrak,magang,resign,cuti',
     ]);
 
     if (!empty($data['position_id'])) {
         $position = \App\Models\Position::find($data['position_id']);
-        if ($position->department_id != ($data['department_id'] ?? null)) {
+        if ($position && $position->department_id != ($data['department_id'] ?? null)) {
             return back()->withErrors(['position_id' => 'Jabatan tidak sesuai dengan departemen yang dipilih.'])->withInput();
         }
     }
 
-    if ($data['employment_status'] === 'nonaktif') {
-        $data['employment_status'] = 'resign';
-    } else {
-        $data['employment_status'] = $employee->isActive() ? $employee->employment_status : 'aktif';
-    }
-
-    $employee->update($data);
+    DB::transaction(function () use ($employee, $data) {
+        $employee->update($data);
+        if ($employee->user) {
+            $userUpdate = ['name' => $data['full_name']];
+            if (!empty($data['email'])) {
+                $userUpdate['email'] = $data['email'];
+            }
+            $employee->user->update($userUpdate);
+        }
+    });
 
     return redirect()->route('employees.index')->with('success', 'Data pegawai berhasil diperbarui.');
 })->name('employees.update')->middleware('role:hr');
+
+Route::delete('/employees/{employee}', function (\App\Models\Employee $employee) {
+    DB::transaction(function () use ($employee) {
+        $user = $employee->user;
+        $name = $employee->full_name;
+        $employee->delete();
+        if ($user && $user->role !== 'hr') {
+            $user->delete();
+        }
+    });
+
+    return redirect()->route('employees.index')->with('success', "Data pegawai {$employee->full_name} berhasil dihapus.");
+})->name('employees.destroy')->middleware('role:hr');
 
 Route::post('/employees/{employee}/reset-password', function (\App\Models\Employee $employee) {
     $default = \App\Models\Employee::DEFAULT_PASSWORD;

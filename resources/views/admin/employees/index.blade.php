@@ -67,7 +67,14 @@
                                 {{ $emp->join_date?->format('d M Y') ?? '-' }}
                             </td>
                             <td class="px-4 py-4 text-center">
-                                <a href="{{ route('employees.edit', $emp) }}" class="text-brand-600 hover:text-brand-700 font-medium text-xs">Edit</a>
+                                <div class="flex items-center justify-center gap-3">
+                                    <a href="{{ route('employees.edit', $emp) }}" class="text-brand-600 hover:text-brand-700 font-medium text-xs">Edit</a>
+                                    <form action="{{ route('employees.destroy', $emp) }}" method="POST" onsubmit="return confirm('Apakah kamu yakin ingin menghapus data pegawai {{ $emp->full_name }}? Data absensi dan cuti terkait juga akan terhapus.');" class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-500 hover:text-red-600 font-medium text-xs">Hapus</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty

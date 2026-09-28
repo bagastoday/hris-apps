@@ -22,7 +22,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     Tambah Pegawai
                 </a>
-                <a href="#" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white/15 text-white text-sm font-medium rounded-xl hover:bg-white/25 transition backdrop-blur-sm border border-white/20">
+                <a href="{{ route('attendances.index') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white/15 text-white text-sm font-medium rounded-xl hover:bg-white/25 transition backdrop-blur-sm border border-white/20">
                     Lihat Absensi
                 </a>
             </div>

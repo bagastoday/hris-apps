@@ -73,9 +73,9 @@
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Email</label>
-                    <input type="email" name="email" value="{{ old('email') }}" required
-                           class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition"
-                           placeholder="email@perusahaan.com">
+                    <input type="text" name="login" value="{{ old('login') }}" required autofocus
+                        placeholder="Email atau NIK (contoh: EMP-004)"
+                        class="...class yang sudah ada...">
                 </div>
 
                 <div>

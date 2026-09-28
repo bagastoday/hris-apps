@@ -9,7 +9,13 @@ class DepartmentController extends Controller
 {
     public function index()
     {
-        $departments = Department::withCount('employees')->latest()->get();
+        $departments = Department::withCount([
+            // Hanya pegawai aktif (aktif, kontrak, magang, cuti)
+            'employees as active_employees_count' => fn ($q) => $q->active(),
+            // Pegawai nonaktif (resign), ditampilkan terpisah
+            'employees as inactive_employees_count' => fn ($q) => $q->where('employment_status', 'resign'),
+        ])->latest()->get();
+
         return view('admin.departments.index', compact('departments'));
     }
 
@@ -34,11 +40,11 @@ class DepartmentController extends Controller
         return redirect()->route('departments.index')->with('success', 'Departemen berhasil ditambahkan.');
     }
 
-public function edit(Department $department)
-{
-    $department->load('positions');
-    return view('admin.departments.edit', compact('department'));
-}
+    public function edit(Department $department)
+    {
+        $department->load('positions');
+        return view('admin.departments.edit', compact('department'));
+    }
 
     public function update(Request $request, Department $department)
     {
@@ -58,8 +64,9 @@ public function edit(Department $department)
 
     public function destroy(Department $department)
     {
+        // Semua pegawai (termasuk yang nonaktif) tetap dihitung agar riwayat datanya tidak hilang
         if ($department->employees()->exists()) {
-            return back()->with('error', 'Tidak bisa menghapus departemen yang masih punya pegawai.');
+            return back()->with('error', 'Tidak bisa menghapus departemen yang masih punya data pegawai (termasuk yang nonaktif). Nonaktifkan departemennya saja lewat menu Edit.');
         }
 
         $department->delete();

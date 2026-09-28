@@ -51,7 +51,7 @@
                             @endif
                         </td>
                         <td class="px-4 py-4 text-slate-600">{{ $dept->code ?? '-' }}</td>
-                        <td class="px-4 py-4 text-slate-600">{{ $dept->employees_count }}</td>
+                        <td class="px-4 py-4 text-slate-800 font-medium">{{ $dept->active_employees_count }}</td>
                         <td class="px-4 py-4">
                             @if($dept->is_active)
                                 <span class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">

@@ -122,9 +122,9 @@
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Email</label>
-                    <input type="email" name="email" value="{{ old('email') }}" required autofocus
-                           class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-700/30 focus:border-brand-700 transition"
-                           placeholder="email@perusahaan.com">
+                    <input type="text" name="login" value="{{ old('login') }}" required autofocus
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-700/30 focus:border-brand-700 transition"
+                        placeholder="Email atau NIK">
                 </div>
 
                 <div>
@@ -153,7 +153,7 @@
             </form>
 
             <p class="text-center text-[11px] text-slate-400 mt-6 leading-relaxed">
-                Demo: <span class="font-medium text-slate-500">hr@talentacore.id</span> / <span class="font-medium text-slate-500">budi@talentacore.id</span><br>
+                Demo: <span class="font-medium text-slate-500">hr@talentacore.id</span>
                 Password: <span class="font-medium text-slate-500">password</span>
             </p>
         </div>

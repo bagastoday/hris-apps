@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Employee extends Model
 {
+    // Password default untuk akun pegawai baru / reset password
+    public const DEFAULT_PASSWORD = 'Talenta123';
+
     protected $fillable = [
         'user_id',
         'employee_code',
@@ -27,6 +30,17 @@ class Employee extends Model
         'birth_date' => 'date',
         'join_date' => 'date',
     ];
+
+    // Pegawai aktif = semua status kecuali resign (aktif, kontrak, magang, cuti)
+    public function isActive(): bool
+    {
+        return $this->employment_status !== 'resign';
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('employment_status', '!=', 'resign');
+    }
 
     public function user()
     {

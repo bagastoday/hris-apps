@@ -127,6 +127,24 @@
                 Laporan
             </a>
 
+            <a href="{{ route('announcements.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
+                {{ request()->is('announcements*') ? 'bg-white text-brand-900 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
+                Pengumuman
+            </a>
+
+            <a href="{{ route('activity-logs.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
+                {{ request()->is('activity-logs*') ? 'bg-white text-brand-900 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Log Aktivitas
+            </a>
+
+            <a href="{{ route('tickets.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
+                {{ request()->is('tickets*') ? 'bg-white text-brand-900 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                Tiket Bantuan
+            </a>
+
             <a href="{{ route('karyawan.home') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
                 {{ request()->is('karyawan*') ? 'bg-white text-brand-900 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -158,8 +176,14 @@
                 </div>
             </div>
 
-            {{-- Tombol Profil + Popup --}}
-            <div class="relative" x-data="{ open: false }">
+            <div class="flex items-center gap-4">
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100/80 text-xs text-slate-600 font-medium">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="admin-live-clock" class="font-mono font-semibold text-slate-800">--:--:-- WIB</span>
+                </div>
+
+                {{-- Tombol Profil + Popup --}}
+                <div class="relative" x-data="{ open: false }">
                 <button @click="open = !open" type="button"
                         class="group flex items-center gap-2 sm:gap-2.5 pl-1.5 pr-2 sm:pr-3 py-1.5 rounded-full border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 shadow-sm transition-all"
                         :class="open && 'border-brand-300 bg-brand-50/60 ring-2 ring-brand-100'">
@@ -276,5 +300,22 @@
         </main>
     </div>
 </div>
+<script>
+    function updateAdminClock() {
+        const el = document.getElementById('admin-live-clock');
+        if (!el) return;
+        const now = new Date();
+        const timeStr = new Intl.DateTimeFormat('id-ID', {
+            timeZone: 'Asia/Jakarta',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hourCycle: 'h23',
+        }).format(now);
+        el.textContent = timeStr + ' WIB';
+    }
+    setInterval(updateAdminClock, 1000);
+    updateAdminClock();
+</script>
 </body>
 </html>

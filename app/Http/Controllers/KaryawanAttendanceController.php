@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Announcement;
 use App\Models\Attendance;
 use App\Models\PayrollItem;
 use Illuminate\Http\Request;
@@ -20,19 +21,37 @@ class KaryawanAttendanceController extends Controller
         $today = today();
         $todayAttendance = null;
         $recentAttendances = collect();
+        $monthlyStats = [
+            'hadir' => 0,
+            'terlambat' => 0,
+            'izin_cuti' => 0,
+            'total_kehadiran' => 0,
+        ];
 
         if ($employee) {
+            $monthAttendances = Attendance::where('employee_id', $employee->id)
+                ->whereYear('date', $today->year)
+                ->whereMonth('date', $today->month)
+                ->get();
+
+            $monthlyStats['hadir'] = $monthAttendances->where('status', 'hadir')->count();
+            $monthlyStats['terlambat'] = $monthAttendances->where('status', 'terlambat')->count();
+            $monthlyStats['izin_cuti'] = $monthAttendances->whereIn('status', ['izin', 'cuti', 'sakit'])->count();
+            $monthlyStats['total_kehadiran'] = $monthlyStats['hadir'] + $monthlyStats['terlambat'];
+
             $todayAttendance = Attendance::where('employee_id', $employee->id)
                 ->whereDate('date', $today)
                 ->first();
 
             $recentAttendances = Attendance::where('employee_id', $employee->id)
                 ->latest('date')
-                ->take(10)
+                ->take(15)
                 ->get();
         }
 
-        return view('karyawan.home', compact('employee', 'todayAttendance', 'recentAttendances', 'today'));
+        $pinnedAnnouncements = Announcement::active()->pinned()->latest('published_at')->take(3)->get();
+
+        return view('karyawan.home', compact('employee', 'todayAttendance', 'recentAttendances', 'today', 'monthlyStats', 'pinnedAnnouncements'));
     }
 
     public function payslips()
@@ -46,7 +65,16 @@ class KaryawanAttendanceController extends Controller
                 ->get()
             : collect();
 
-        return view('karyawan.payroll', compact('employee', 'payslips'));
+        $stats = [
+            'base_salary' => $employee?->base_salary ?? 0,
+            'latest_net_pay' => $payslips->first()?->net_pay ?? 0,
+            'total_paid_year' => $payslips->where('payment_status', 'paid')
+                ->filter(fn ($item) => $item->payrollRun && str_starts_with($item->payrollRun->period, now()->format('Y')))
+                ->sum('net_pay'),
+            'total_slips' => $payslips->count(),
+        ];
+
+        return view('karyawan.payroll', compact('employee', 'payslips', 'stats'));
     }
 
     // Proses Absen Masuk dengan Foto & Jam Realtime

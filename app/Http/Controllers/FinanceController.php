@@ -51,6 +51,12 @@ class FinanceController extends Controller
 
         $employee->update(['base_salary' => $validated['base_salary']]);
 
+        \App\Models\ActivityLog::record(
+            'update_salary',
+            "Memperbarui gaji pokok {$employee->full_name} ({$employee->employee_code}) menjadi Rp " . number_format((float) $validated['base_salary'], 0, ',', '.'),
+            $employee
+        );
+
         return back()->with('success', "Gaji pokok {$employee->full_name} berhasil diperbarui.");
     }
 
@@ -146,6 +152,12 @@ class FinanceController extends Controller
             'finalized_at' => now(),
         ]);
 
+        \App\Models\ActivityLog::record(
+            'finalize_payroll',
+            "Memfinalisasi payroll periode {$payroll->period}",
+            $payroll
+        );
+
         return back()->with('success', 'Payroll telah diproses. Tandai pembayaran setiap pegawai setelah transfer selesai.');
     }
 
@@ -166,6 +178,12 @@ class FinanceController extends Controller
                 $payroll->update(['status' => 'paid']);
             }
         });
+
+        \App\Models\ActivityLog::record(
+            'paid_payroll',
+            "Mencatat pembayaran gaji {$item->employee_name} untuk periode {$payroll->period} (Rp " . number_format((float) $item->net_pay, 0, ',', '.') . ")",
+            $item
+        );
 
         return back()->with('success', "Pembayaran {$item->employee_name} berhasil dicatat.");
     }

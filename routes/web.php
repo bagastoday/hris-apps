@@ -1,11 +1,14 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\KaryawanAttendanceController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\TicketController;
 use App\Models\Attendance;
 use App\Models\Department;
 use App\Models\Employee;
@@ -270,8 +273,49 @@ Route::post('/karyawan/absensi/check-out', [KaryawanAttendanceController::class,
     ->name('karyawan.attendance.checkout')
     ->middleware('role:karyawan,hr,finance');
 
+Route::get('/karyawan/leaves', [LeaveController::class, 'myLeaves'])
+    ->name('leaves.my')
+    ->middleware('role:karyawan,hr,finance');
+
+Route::get('/karyawan/leaves/create', [LeaveController::class, 'create'])
+    ->name('leaves.create')
+    ->middleware('role:karyawan,hr,finance');
+
+Route::post('/karyawan/leaves', [LeaveController::class, 'store'])
+    ->name('leaves.store')
+    ->middleware('role:karyawan,hr,finance');
+
+Route::delete('/karyawan/leaves/{leave}', [LeaveController::class, 'cancel'])
+    ->name('leaves.cancel')
+    ->middleware('role:karyawan,hr,finance');
+
 Route::get('/karyawan/payroll', [KaryawanAttendanceController::class, 'payslips'])
     ->name('karyawan.payroll')
+    ->middleware('role:karyawan,hr,finance');
+
+Route::get('/karyawan/announcements', [AnnouncementController::class, 'karyawanIndex'])
+    ->name('karyawan.announcements')
+    ->middleware('role:karyawan,hr,finance');
+
+// Pusat Bantuan & Pengaduan (Karyawan)
+Route::get('/karyawan/tickets', [TicketController::class, 'karyawanIndex'])
+    ->name('karyawan.tickets')
+    ->middleware('role:karyawan,hr,finance');
+
+Route::get('/karyawan/tickets/create', [TicketController::class, 'karyawanCreate'])
+    ->name('karyawan.tickets.create')
+    ->middleware('role:karyawan,hr,finance');
+
+Route::post('/karyawan/tickets', [TicketController::class, 'karyawanStore'])
+    ->name('karyawan.tickets.store')
+    ->middleware('role:karyawan,hr,finance');
+
+Route::get('/karyawan/tickets/{ticket}', [TicketController::class, 'karyawanShow'])
+    ->name('karyawan.tickets.show')
+    ->middleware('role:karyawan,hr,finance');
+
+Route::post('/karyawan/tickets/{ticket}/reply', [TicketController::class, 'karyawanReply'])
+    ->name('karyawan.tickets.reply')
     ->middleware('role:karyawan,hr,finance');
 
 // ========== PEGAWAI (HR only) ==========
@@ -507,3 +551,46 @@ Route::get('/attendances', function (Request $request) {
 
     return view('admin.attendances.index', compact('attendances', 'summary', 'departments', 'date', 'departmentId', 'search'));
 })->name('attendances.index')->middleware('role:hr');
+
+// ========== PENGUMUMAN KANTOR (HR) ==========
+Route::get('/announcements', [AnnouncementController::class, 'index'])
+    ->name('announcements.index')
+    ->middleware('role:hr');
+
+Route::post('/announcements', [AnnouncementController::class, 'store'])
+    ->name('announcements.store')
+    ->middleware('role:hr');
+
+Route::put('/announcements/{announcement}', [AnnouncementController::class, 'update'])
+    ->name('announcements.update')
+    ->middleware('role:hr');
+
+Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy'])
+    ->name('announcements.destroy')
+    ->middleware('role:hr');
+
+Route::post('/announcements/{announcement}/toggle-pin', [AnnouncementController::class, 'togglePin'])
+    ->name('announcements.toggle-pin')
+    ->middleware('role:hr');
+
+// ========== AUDIT LOG AKTIVITAS (HR) ==========
+Route::get('/activity-logs', [ActivityLogController::class, 'index'])
+    ->name('activity-logs.index')
+    ->middleware('role:hr');
+
+// ========== TIKET BANTUAN & PENGADUAN (HR) ==========
+Route::get('/tickets', [TicketController::class, 'index'])
+    ->name('tickets.index')
+    ->middleware('role:hr');
+
+Route::get('/tickets/{ticket}', [TicketController::class, 'show'])
+    ->name('tickets.show')
+    ->middleware('role:hr');
+
+Route::post('/tickets/{ticket}/status', [TicketController::class, 'updateStatus'])
+    ->name('tickets.update-status')
+    ->middleware('role:hr');
+
+Route::post('/tickets/{ticket}/reply', [TicketController::class, 'reply'])
+    ->name('tickets.reply')
+    ->middleware('role:hr');

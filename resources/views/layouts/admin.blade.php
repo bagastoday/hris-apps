@@ -79,6 +79,9 @@
                     {{ request()->is('finance') ? 'bg-white text-brand-900 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.12-3 2.5S10.343 13 12 13s3 1.12 3 2.5S13.657 18 12 18m0-10V6m0 2v10m0 0v2m9-8a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     Payroll
+                    @if($financeActionCount > 0)
+                        <span class="ml-auto rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800">{{ $financeActionCount }} tindakan</span>
+                    @endif
                 </a>
                 <a href="{{ route('finance.salaries') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
                     {{ request()->is('finance/salaries') ? 'bg-white text-brand-900 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
@@ -89,6 +92,14 @@
                     {{ request()->is('karyawan*') ? 'bg-white text-brand-900 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     Portal Karyawan
+                </a>
+                <a href="{{ route('tickets.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
+                    {{ request()->is('tickets*') ? 'bg-white text-brand-900 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                    Tiket Finance
+                    @if($ticketUnreadCount > 0)
+                        <span class="ml-auto rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700">{{ $ticketUnreadCount }} tiket baru</span>
+                    @endif
                 </a>
             @else
             <a href="{{ url('/') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
@@ -119,6 +130,9 @@
                 {{ request()->is('leaves*') ? 'bg-white text-brand-900 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                 Cuti
+                @if($pendingLeaveCount > 0)
+                    <span class="ml-auto rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800">{{ $pendingLeaveCount }} perlu diproses</span>
+                @endif
             </a>
 
             <a href="{{ route('reports.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
@@ -143,6 +157,9 @@
                 {{ request()->is('tickets*') ? 'bg-white text-brand-900 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
                 Tiket Bantuan
+                @if($ticketUnreadCount > 0)
+                    <span class="ml-auto rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700">{{ $ticketUnreadCount }} tiket baru</span>
+                @endif
             </a>
 
             <a href="{{ route('karyawan.home') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
@@ -177,11 +194,6 @@
             </div>
 
             <div class="flex items-center gap-4">
-                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100/80 text-xs text-slate-600 font-medium">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span id="admin-live-clock" class="font-mono font-semibold text-slate-800">--:--:-- WIB</span>
-                </div>
-
                 {{-- Tombol Profil + Popup --}}
                 <div class="relative" x-data="{ open: false }">
                 <button @click="open = !open" type="button"
@@ -199,7 +211,7 @@
                     </div>
                     <span class="hidden sm:block text-left leading-tight">
                         <span class="block text-xs font-semibold text-slate-800 max-w-[110px] truncate">{{ auth()->user()->name ?? 'Profil' }}</span>
-                        <span class="block text-[10px] text-slate-400 uppercase tracking-wide">{{ auth()->user()->role ?? '-' }}</span>
+                        <span class="block text-[10px] text-slate-400 uppercase tracking-wide">{{ auth()->user()->display_title }}</span>
                     </span>
                     <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 shrink-0"
                          :class="open && 'rotate-180 text-brand-600'"
@@ -240,7 +252,7 @@
                     {{-- Data singkat --}}
                     <div class="px-5 py-3.5 flex items-center gap-2 border-b border-slate-100">
                         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-brand-50 text-brand-700">
-                            {{ auth()->user()->role ?? '-' }}
+                            {{ auth()->user()->display_title }}
                         </span>
                         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-50 text-slate-500">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
@@ -300,22 +312,5 @@
         </main>
     </div>
 </div>
-<script>
-    function updateAdminClock() {
-        const el = document.getElementById('admin-live-clock');
-        if (!el) return;
-        const now = new Date();
-        const timeStr = new Intl.DateTimeFormat('id-ID', {
-            timeZone: 'Asia/Jakarta',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hourCycle: 'h23',
-        }).format(now);
-        el.textContent = timeStr + ' WIB';
-    }
-    setInterval(updateAdminClock, 1000);
-    updateAdminClock();
-</script>
 </body>
 </html>

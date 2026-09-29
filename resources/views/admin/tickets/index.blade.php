@@ -1,9 +1,9 @@
 <!-- resources/views/admin/tickets/index.blade.php -->
 @extends('layouts.admin')
 
-@section('title', 'Pusat Bantuan & Tiket HR')
-@section('page-title', 'Pusat Bantuan & Pengaduan HR')
-@section('page-subtitle', 'Kelola pertanyaan, pengaduan fasilitas, kendala absensi/gaji, dan laporan karyawan')
+@section('title', 'Inbox Tiket ' . (auth()->user()->isFinance() ? 'Finance' : 'HR'))
+@section('page-title', 'Inbox Tiket ' . (auth()->user()->isFinance() ? 'Finance' : 'HR'))
+@section('page-subtitle', 'Kelola dan tindak lanjuti tiket yang ditujukan ke tim ' . (auth()->user()->isFinance() ? 'Finance' : 'HR'))
 
 @section('content')
 <div class="space-y-6">
@@ -75,13 +75,9 @@
 
             <select name="category" class="px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
                 <option value="">Semua Kategori</option>
-                <option value="fasilitas" {{ $category === 'fasilitas' ? 'selected' : '' }}>Fasilitas & Sarana</option>
-                <option value="payroll" {{ $category === 'payroll' ? 'selected' : '' }}>Gaji & Payroll</option>
-                <option value="bpjs" {{ $category === 'bpjs' ? 'selected' : '' }}>BPJS & Asuransi</option>
-                <option value="kebijakan" {{ $category === 'kebijakan' ? 'selected' : '' }}>Kebijakan HR & SOP</option>
-                <option value="it_support" {{ $category === 'it_support' ? 'selected' : '' }}>IT & Jaringan</option>
-                <option value="pengaduan" {{ $category === 'pengaduan' ? 'selected' : '' }}>Pengaduan Rahasia</option>
-                <option value="lainnya" {{ $category === 'lainnya' ? 'selected' : '' }}>Lainnya</option>
+                @foreach(\App\Models\Ticket::CATEGORY_LABELS as $value => $label)
+                    <option value="{{ $value }}" {{ $category === $value ? 'selected' : '' }}>{{ $label }}</option>
+                @endforeach
             </select>
 
             <button type="submit" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl transition">
@@ -136,6 +132,11 @@
                                     {{ $t->title }}
                                 </a>
                                 <p class="text-[11px] text-slate-400 line-clamp-1 mt-0.5">{{ Str::limit($t->description, 60) }}</p>
+                                @if($t->team_last_read_reply_id === null || $t->has_unread_for_team)
+                                    <span class="mt-1 inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-red-600"></span> Pesan baru
+                                    </span>
+                                @endif
                             </td>
                             <td class="px-5 py-4">
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-700">

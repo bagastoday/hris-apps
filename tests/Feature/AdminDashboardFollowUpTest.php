@@ -32,12 +32,20 @@ class AdminDashboardFollowUpTest extends TestCase
         $pendingLeaveEmployee = $this->createEmployee('Pending Leave Employee', 'EMP-002', $department, $position);
         $approvedLeaveEmployee = $this->createEmployee('Approved Leave Employee', 'EMP-003', $department, $position);
         $incompleteEmployee = $this->createEmployee('Incomplete Employee', 'EMP-004');
+        $lateEmployee = $this->createEmployee('Late Employee', 'EMP-005', $department, $position);
 
         Attendance::create([
             'employee_id' => $presentEmployee->id,
             'date' => today(),
             'check_in' => '08:00:00',
             'status' => 'hadir',
+        ]);
+        Attendance::create([
+            'employee_id' => $lateEmployee->id,
+            'date' => today(),
+            'check_in' => '08:45:00',
+            'check_out' => '17:00:00',
+            'status' => 'terlambat',
         ]);
         Leave::create([
             'employee_id' => $pendingLeaveEmployee->id,
@@ -61,6 +69,9 @@ class AdminDashboardFollowUpTest extends TestCase
         $response = $this->actingAs($this->createHrUser())->get(route('dashboard'));
 
         $response->assertOk()
+            ->assertViewHas('hadirHariIni', 2)
+            ->assertViewHas('hadirTepatWaktuHariIni', 1)
+            ->assertViewHas('terlambatHariIni', 1)
             ->assertViewHas('cutiPending', 1)
             ->assertViewHas('notCheckedInCount', 2)
             ->assertViewHas('incompleteEmployeeCount', 1)

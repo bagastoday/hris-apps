@@ -18,7 +18,7 @@
     <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 sm:p-8 space-y-6">
         <div class="border-b border-slate-100 pb-4">
             <h1 class="text-lg font-bold text-slate-900">Formulir Tiket Bantuan & Pengaduan</h1>
-            <p class="text-xs text-slate-500 mt-1">Tim HR & Operasional akan segera meninjau dan menindaklanjuti kendala yang kamu sampaikan.</p>
+            <p class="text-xs text-slate-500 mt-1">Pilih kategori kendala. Tiket akan otomatis diteruskan ke tim HR atau Finance yang sesuai.</p>
         </div>
 
         <form method="POST" action="{{ route('karyawan.tickets.store') }}" enctype="multipart/form-data" class="space-y-5">
@@ -44,13 +44,13 @@
                     </label>
                     <select name="category" required class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 @error('category') border-red-300 @enderror">
                         <option value="">-- Pilih Kategori --</option>
-                        <option value="fasilitas" {{ old('category') === 'fasilitas' ? 'selected' : '' }}>Fasilitas & Sarana Kantor</option>
-                        <option value="payroll" {{ old('category') === 'payroll' ? 'selected' : '' }}>Gaji, Lembur & Payroll</option>
-                        <option value="bpjs" {{ old('category') === 'bpjs' ? 'selected' : '' }}>BPJS Kesehatan & Ketenagakerjaan</option>
-                        <option value="kebijakan" {{ old('category') === 'kebijakan' ? 'selected' : '' }}>Kebijakan HR & SOP Perusahaan</option>
-                        <option value="it_support" {{ old('category') === 'it_support' ? 'selected' : '' }}>IT Support, Email & Jaringan</option>
-                        <option value="pengaduan" {{ old('category') === 'pengaduan' ? 'selected' : '' }}>Pengaduan Khusus / Whistleblowing</option>
-                        <option value="lainnya" {{ old('category') === 'lainnya' ? 'selected' : '' }}>Pertanyaan Umum / Lainnya</option>
+                        @foreach(['Finance' => \App\Models\Ticket::FINANCE_CATEGORIES, 'HR' => array_diff(array_keys(\App\Models\Ticket::CATEGORY_LABELS), \App\Models\Ticket::FINANCE_CATEGORIES)] as $team => $categories)
+                            <optgroup label="Tim {{ $team }}">
+                                @foreach($categories as $value)
+                                    <option value="{{ $value }}" {{ old('category') === $value ? 'selected' : '' }}>{{ \App\Models\Ticket::CATEGORY_LABELS[$value] }}</option>
+                                @endforeach
+                            </optgroup>
+                        @endforeach
                     </select>
                     @error('category')
                         <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>

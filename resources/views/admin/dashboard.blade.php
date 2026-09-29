@@ -105,20 +105,21 @@
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Hadir Hari Ini</p>
         </div>
         <p class="text-3xl font-bold text-slate-900">{{ $hadirHariIni }}</p>
-        <p class="text-xs text-slate-400 mt-1">{{ $terlambatHariIni }} terlambat · {{ $alphaHariIni }} alpha</p>
+        <p class="text-xs text-slate-400 mt-1">sudah check-in · {{ $terlambatHariIni }} terlambat · {{ $alphaHariIni }} alpha</p>
     </div>
 
     {{-- Cuti Pending --}}
-    <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition">
+    <a href="{{ route('leaves.index', ['status' => 'pending']) }}" class="block bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:border-amber-200 hover:shadow-md transition">
         <div class="flex items-center gap-3 mb-3">
             <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </a>
             </div>
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Cuti Pending</p>
         </div>
         <p class="text-3xl font-bold text-slate-900">{{ $cutiPending }}</p>
         <p class="text-xs text-slate-400 mt-1">menunggu persetujuan</p>
-    </div>
+    </a>
 
     {{-- Departemen --}}
     <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition">
@@ -252,8 +253,8 @@
 
 <div class="grid grid-cols-4 gap-2 px-5 py-4 border-b border-slate-50">
     <div class="text-center">
-        <p class="text-[10px] uppercase tracking-wide text-slate-400 font-medium">Hadir</p>
-        <p class="text-xl font-bold text-slate-900">{{ $hadirHariIni }}</p>
+        <p class="text-[10px] uppercase tracking-wide text-slate-400 font-medium">Tepat Waktu</p>
+        <p class="text-xl font-bold text-slate-900">{{ $hadirTepatWaktuHariIni }}</p>
     </div>
     <div class="text-center">
         <p class="text-[10px] uppercase tracking-wide text-slate-400 font-medium">Terlambat</p>

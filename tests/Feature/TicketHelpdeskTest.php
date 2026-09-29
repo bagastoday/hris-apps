@@ -7,6 +7,9 @@ namespace Tests\Feature;
 use App\Models\ActivityLog;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\Leave;
+use App\Models\PayrollItem;
+use App\Models\PayrollRun;
 use App\Models\Position;
 use App\Models\Ticket;
 use App\Models\TicketReply;
@@ -73,6 +76,24 @@ class TicketHelpdeskTest extends TestCase
         ]);
     }
 
+    public function test_karyawan_can_create_finance_ticket()
+    {
+        $karyawan = $this->createKaryawanUser();
+
+        $response = $this->actingAs($karyawan)->post(route('karyawan.tickets.store'), [
+            'title' => 'Pengajuan Reimburse',
+            'category' => 'reimburse',
+            'priority' => 'sedang',
+            'description' => 'Mohon diproses penggantian biaya perjalanan dinas.',
+        ]);
+
+        $ticket = Ticket::where('title', 'Pengajuan Reimburse')->firstOrFail();
+
+        $this->assertSame('finance', $ticket->assigned_team);
+        $response->assertRedirect(route('karyawan.tickets.show', $ticket));
+        $response->assertSessionHas('success', "Tiket kamu berhasil dibuat dengan nomor referensi #{$ticket->ticket_code} dan diteruskan ke tim Finance.");
+    }
+
     /**
      * Karyawan dapat membuat pengaduan secara anonim (whistleblowing).
      */
@@ -120,6 +141,180 @@ class TicketHelpdeskTest extends TestCase
         $detail = $this->actingAs($hr)->get(route('tickets.show', $ticket));
         $detail->assertStatus(200);
         $detail->assertSee('Mohon info kapan fisik kartu');
+        $detail->assertSee('HR Admin');
+        $detail->assertDontSee('admin-live-clock');
+    }
+
+    public function test_profile_title_uses_admin_role_or_employee_position()
+    {
+        $hr = User::factory()->create(['role' => 'hr']);
+        $this->assertSame('HR Admin', $hr->display_title);
+
+        $finance = User::factory()->create(['role' => 'finance']);
+        $this->assertSame('Finance Admin', $finance->display_title);
+
+        $karyawan = $this->createKaryawanUser();
+        $karyawan->employee->position->update(['name' => 'Custody']);
+
+        $this->assertSame('Custody', $karyawan->display_title);
+    }
+
+    public function test_finance_and_hr_only_access_tickets_for_their_team()
+    {
+        $hr = User::factory()->create(['role' => 'hr']);
+        $finance = User::factory()->create(['role' => 'finance']);
+        $karyawan = $this->createKaryawanUser();
+
+        $financeTicket = Ticket::create([
+            'ticket_code' => Ticket::generateTicketCode(),
+            'user_id' => $karyawan->id,
+            'title' => 'Koreksi Slip Gaji',
+            'category' => 'payroll',
+            'priority' => 'sedang',
+            'status' => 'open',
+            'description' => 'Mohon pengecekan komponen gaji bulan ini.',
+        ]);
+        $hrTicket = Ticket::create([
+            'ticket_code' => Ticket::generateTicketCode(),
+            'user_id' => $karyawan->id,
+            'title' => 'Perbaikan Data Karyawan',
+            'category' => 'data_karyawan',
+            'priority' => 'sedang',
+            'status' => 'open',
+            'description' => 'Ada kesalahan pada data alamat karyawan.',
+        ]);
+
+        $financeInbox = $this->actingAs($finance)->get(route('tickets.index'));
+        $financeInbox->assertOk()->assertSee('Koreksi Slip Gaji')->assertDontSee('Perbaikan Data Karyawan');
+        $this->get(route('tickets.show', $financeTicket))->assertOk();
+        $this->get(route('tickets.show', $hrTicket))->assertForbidden();
+
+        $hrInbox = $this->actingAs($hr)->get(route('tickets.index'));
+        $hrInbox->assertOk()->assertSee('Perbaikan Data Karyawan')->assertDontSee('Koreksi Slip Gaji');
+        $this->get(route('tickets.show', $financeTicket))->assertForbidden();
+    }
+
+    public function test_new_ticket_shows_simple_unread_label_until_ticket_is_opened()
+    {
+        $hr = User::factory()->create(['role' => 'hr']);
+        $karyawan = $this->createKaryawanUser();
+        $ticket = Ticket::create([
+            'ticket_code' => Ticket::generateTicketCode(),
+            'user_id' => $karyawan->id,
+            'title' => 'Koreksi Data Pegawai',
+            'category' => 'data_karyawan',
+            'priority' => 'sedang',
+            'status' => 'open',
+            'description' => 'Mohon koreksi nomor telepon pada data pegawai.',
+        ]);
+
+        $this->actingAs($hr)
+            ->get(route('tickets.index'))
+            ->assertOk()
+            ->assertSee('1 tiket baru')
+            ->assertDontSee('ticket-alert-modal')
+            ->assertSee('Pesan baru');
+        $this->assertDatabaseHas('tickets', ['id' => $ticket->id]);
+
+        $this->get(route('tickets.show', $ticket))->assertOk();
+        $this->assertSame(0, $ticket->fresh()->team_last_read_reply_id);
+
+        $this->get(route('tickets.index'))
+            ->assertOk()
+            ->assertDontSee('1 tiket baru')
+            ->assertDontSee('Pesan baru');
+    }
+
+    public function test_action_counts_appear_on_hr_and_finance_menus_and_finance_dashboard()
+    {
+        $hr = User::factory()->create(['role' => 'hr']);
+        $employeeUser = $this->createKaryawanUser();
+        $employee = $employeeUser->employee;
+        Leave::create([
+            'employee_id' => $employee->id,
+            'leave_type' => 'cuti_tahunan',
+            'start_date' => now()->addDay()->toDateString(),
+            'end_date' => now()->addDays(2)->toDateString(),
+            'total_days' => 2,
+            'reason' => 'Keperluan keluarga',
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($hr)
+            ->get(route('leaves.index'))
+            ->assertOk()
+            ->assertSee('1 perlu diproses');
+
+        $finance = User::factory()->create(['role' => 'finance']);
+        $draft = PayrollRun::create([
+            'period' => now()->format('Y-m'),
+            'status' => 'draft',
+            'prepared_by' => $finance->id,
+        ]);
+        $processed = PayrollRun::create([
+            'period' => now()->subMonth()->format('Y-m'),
+            'status' => 'processed',
+            'prepared_by' => $finance->id,
+        ]);
+        PayrollItem::create([
+            'payroll_run_id' => $processed->id,
+            'employee_id' => $employee->id,
+            'employee_code' => $employee->employee_code,
+            'employee_name' => $employee->full_name,
+            'base_salary' => 1000000,
+            'net_pay' => 1000000,
+            'payment_status' => 'unpaid',
+        ]);
+
+        $this->actingAs($finance)
+            ->get(route('finance.index'))
+            ->assertOk()
+            ->assertSee('2 tindakan')
+            ->assertSee('1 draft perlu diperiksa')
+            ->assertSee('1 pembayaran belum dicatat');
+    }
+
+    public function test_unread_reply_badges_clear_only_when_recipient_opens_ticket()
+    {
+        $hr = User::factory()->create(['role' => 'hr']);
+        $karyawan = $this->createKaryawanUser();
+        $ticket = Ticket::create([
+            'ticket_code' => Ticket::generateTicketCode(),
+            'user_id' => $karyawan->id,
+            'title' => 'Perbaikan Data Rekening',
+            'category' => 'data_karyawan',
+            'priority' => 'sedang',
+            'status' => 'open',
+            'description' => 'Data rekening payroll perlu diperbarui.',
+        ]);
+
+        $this->actingAs($hr)->get(route('tickets.show', $ticket));
+        $this->actingAs($karyawan)->post(route('karyawan.tickets.reply', $ticket), [
+            'message' => 'Saya sudah mengirimkan data rekening yang benar.',
+        ])->assertRedirect();
+
+        $this->actingAs($hr)->get(route('tickets.index'))
+            ->assertOk()
+            ->assertSee('Pesan baru');
+        $this->get(route('tickets.show', $ticket))->assertOk();
+        $this->assertNotNull($ticket->fresh()->team_last_read_reply_id);
+
+        $this->actingAs($hr)->post(route('tickets.reply', $ticket), [
+            'message' => 'Data sudah kami perbarui, terima kasih.',
+            'change_status' => 'in_progress',
+        ])->assertRedirect();
+
+        $this->actingAs($karyawan)->get(route('karyawan.tickets'))
+            ->assertOk()
+            ->assertSee('Balasan baru');
+        $this->get(route('karyawan.tickets.show', $ticket))->assertOk();
+        $this->assertSame(
+            $ticket->replies()->max('id'),
+            $ticket->fresh()->employee_last_read_reply_id
+        );
+        $this->get(route('karyawan.tickets'))
+            ->assertOk()
+            ->assertDontSee('Balasan baru');
     }
 
     /**

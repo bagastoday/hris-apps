@@ -86,6 +86,21 @@ public function isFinance(): bool
     return $this->role === 'finance';
 }
 
+public function getDisplayTitleAttribute(): string
+{
+    if ($this->hasHrAdminAccess()) {
+        return 'HR Admin';
+    }
+
+    if ($this->isFinance()) {
+        return 'Finance Admin';
+    }
+
+    $positionName = trim((string) $this->employee?->position?->name);
+
+    return $positionName !== '' ? $positionName : 'Karyawan';
+}
+
 public function homeRouteName(): string
 {
     if ($this->hasHrAdminAccess()) {

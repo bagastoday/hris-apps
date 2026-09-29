@@ -49,7 +49,7 @@
                     </div>
 
                     <span class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium">
-                        {{ $ticket->category_label }}
+                        {{ $ticket->category_label }} · Tim {{ $ticket->assigned_team_label }}
                     </span>
                 </div>
 
@@ -89,11 +89,11 @@
                         <div class="flex items-center justify-between border-b {{ $reply->is_admin_reply ? 'border-blue-100' : 'border-slate-100' }} pb-3 mb-3">
                             <div class="flex items-center gap-2.5">
                                 <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold {{ $reply->is_admin_reply ? 'bg-brand-600 text-white' : 'bg-slate-200 text-slate-700' }}">
-                                    {{ $reply->is_admin_reply ? 'HR' : substr($reply->user?->name ?? 'K', 0, 1) }}
+                                    {{ $reply->is_admin_reply ? $ticket->assigned_team_label : substr($reply->user?->name ?? 'K', 0, 1) }}
                                 </div>
                                 <div>
                                     <span class="font-bold text-xs text-slate-900">
-                                        {{ $reply->is_admin_reply ? ($reply->user?->name . ' (Tim HR)') : ($ticket->is_anonymous ? 'Pelapor (Anonim)' : ($reply->user?->name ?? 'Karyawan')) }}
+                                        {{ $reply->is_admin_reply ? ($reply->user?->name . ' (Tim ' . $ticket->assigned_team_label . ')') : ($ticket->is_anonymous ? 'Pelapor (Anonim)' : ($reply->user?->name ?? 'Karyawan')) }}
                                     </span>
                                     <div class="text-[10px] text-slate-400">
                                         {{ $reply->created_at->translatedFormat('d M Y, H:i') }} WIB
@@ -102,7 +102,7 @@
                             </div>
 
                             @if($reply->is_admin_reply)
-                                <span class="text-[10px] font-semibold bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full">Respon HR</span>
+                                <span class="text-[10px] font-semibold bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full">Respon {{ auth()->user()->isFinance() ? 'Finance' : 'HR' }}</span>
                             @else
                                 <span class="text-[10px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">Karyawan</span>
                             @endif
@@ -129,7 +129,7 @@
                 @endforelse
             </div>
 
-            {{-- HR Reply Box --}}
+            {{-- Team reply box --}}
             <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
                 <h4 class="font-bold text-slate-900 text-sm">Kirimkan Tanggapan Solusi</h4>
 
@@ -138,7 +138,7 @@
 
                     <div>
                         <label class="block text-xs font-medium text-slate-600 mb-1">Pesan Tanggapan <span class="text-red-500">*</span></label>
-                        <textarea name="message" rows="4" required placeholder="Tuliskan jawaban, panduan solusi, atau konfirmasi tindakan HR..."
+                        <textarea name="message" rows="4" required placeholder="Tuliskan jawaban, panduan solusi, atau tindak lanjut tiket..."
                                   class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"></textarea>
                     </div>
 

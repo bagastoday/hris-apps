@@ -208,7 +208,11 @@ Route::get('/', function () {
     $totalEmployees = Employee::active()->count();
     $totalDepartments = Department::where('is_active', true)->count();
     $totalAttendanceHariIni = Attendance::whereDate('date', $today)->count();
-    $hadirHariIni = Attendance::whereDate('date', $today)->where('status', 'hadir')->count();
+    $hadirHariIni = Attendance::whereDate('date', $today)->whereNotNull('check_in')->count();
+    $hadirTepatWaktuHariIni = Attendance::whereDate('date', $today)
+        ->where('status', 'hadir')
+        ->whereNotNull('check_in')
+        ->count();
     $terlambatHariIni = Attendance::whereDate('date', $today)->where('status', 'terlambat')->count();
     $alphaHariIni = Attendance::whereDate('date', $today)->where('status', 'alpha')->count();
     $cutiHariIni = Attendance::whereDate('date', $today)->where('status', 'cuti')->count();
@@ -244,6 +248,7 @@ Route::get('/', function () {
         'totalDepartments',
         'totalAttendanceHariIni',
         'hadirHariIni',
+        'hadirTepatWaktuHariIni',
         'terlambatHariIni',
         'alphaHariIni',
         'cutiHariIni',
@@ -578,19 +583,19 @@ Route::get('/activity-logs', [ActivityLogController::class, 'index'])
     ->name('activity-logs.index')
     ->middleware('role:hr');
 
-// ========== TIKET BANTUAN & PENGADUAN (HR) ==========
+// ========== TIKET BANTUAN & PENGADUAN (HR & FINANCE) ==========
 Route::get('/tickets', [TicketController::class, 'index'])
     ->name('tickets.index')
-    ->middleware('role:hr');
+    ->middleware('role:hr,finance');
 
 Route::get('/tickets/{ticket}', [TicketController::class, 'show'])
     ->name('tickets.show')
-    ->middleware('role:hr');
+    ->middleware('role:hr,finance');
 
 Route::post('/tickets/{ticket}/status', [TicketController::class, 'updateStatus'])
     ->name('tickets.update-status')
-    ->middleware('role:hr');
+    ->middleware('role:hr,finance');
 
 Route::post('/tickets/{ticket}/reply', [TicketController::class, 'reply'])
     ->name('tickets.reply')
-    ->middleware('role:hr');
+    ->middleware('role:hr,finance');

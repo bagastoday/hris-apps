@@ -27,7 +27,10 @@ class TicketController extends Controller
         $priority = $request->input('priority');
         $category = $request->input('category');
 
-        $query = Ticket::with(['user.employee.department', 'assignedTo'])->latest();
+        $query = $this->teamTickets()
+            ->with(['user.employee.department', 'assignedTo'])
+            ->withUnreadForTeam()
+            ->latest();
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
@@ -53,11 +56,12 @@ class TicketController extends Controller
 
         $tickets = $query->paginate(15)->withQueryString();
 
+        $statsQuery = $this->teamTickets();
         $stats = [
-            'total' => Ticket::count(),
-            'open' => Ticket::where('status', 'open')->count(),
-            'in_progress' => Ticket::where('status', 'in_progress')->count(),
-            'resolved' => Ticket::where('status', 'resolved')->count(),
+            'total' => (clone $statsQuery)->count(),
+            'open' => (clone $statsQuery)->where('status', 'open')->count(),
+            'in_progress' => (clone $statsQuery)->where('status', 'in_progress')->count(),
+            'resolved' => (clone $statsQuery)->where('status', 'resolved')->count(),
         ];
 
         return view('admin.tickets.index', compact('tickets', 'stats', 'search', 'status', 'priority', 'category'));
@@ -68,6 +72,10 @@ class TicketController extends Controller
      */
     public function show(Ticket $ticket)
     {
+        $this->authorizeTicketTeam($ticket);
+        $ticket->forceFill([
+            'team_last_read_reply_id' => $ticket->replies()->max('id') ?? 0,
+        ])->save();
         $ticket->load(['user.employee.department', 'user.employee.position', 'assignedTo', 'replies.user']);
 
         return view('admin.tickets.show', compact('ticket'));
@@ -78,6 +86,7 @@ class TicketController extends Controller
      */
     public function updateStatus(Request $request, Ticket $ticket)
     {
+        $this->authorizeTicketTeam($ticket);
         $validated = $request->validate([
             'status' => 'required|in:open,in_progress,resolved,closed',
             'priority' => 'nullable|in:rendah,sedang,tinggi,darurat',
@@ -116,6 +125,7 @@ class TicketController extends Controller
      */
     public function reply(Request $request, Ticket $ticket)
     {
+        $this->authorizeTicketTeam($ticket);
         $validated = $request->validate([
             'message' => 'required|string|min:3',
             'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
@@ -130,13 +140,14 @@ class TicketController extends Controller
             $attachmentPath = $request->file('attachment')->store('ticket_attachments', 'public');
         }
 
-        TicketReply::create([
+        $reply = TicketReply::create([
             'ticket_id' => $ticket->id,
             'user_id' => Auth::id(),
             'message' => $validated['message'],
             'attachment' => $attachmentPath,
             'is_admin_reply' => true,
         ]);
+        $ticket->team_last_read_reply_id = $reply->id;
 
         // Auto update status jika ditentukan
         if (!empty($validated['change_status'])) {
@@ -173,7 +184,7 @@ class TicketController extends Controller
         $status = $request->input('status');
         $search = trim((string) $request->input('search', ''));
 
-        $query = Ticket::where('user_id', $user->id)->latest();
+        $query = Ticket::where('user_id', $user->id)->withUnreadForEmployee()->latest();
 
         if ($status) {
             $query->where('status', $status);
@@ -213,7 +224,7 @@ class TicketController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:200',
-            'category' => 'required|in:fasilitas,payroll,bpjs,kebijakan,it_support,pengaduan,lainnya',
+            'category' => 'required|in:' . implode(',', array_keys(Ticket::CATEGORY_LABELS)),
             'priority' => 'required|in:rendah,sedang,tinggi,darurat',
             'description' => 'required|string|min:10',
             'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
@@ -250,7 +261,7 @@ class TicketController extends Controller
         );
 
         return redirect()->route('karyawan.tickets.show', $ticket)
-            ->with('success', "Tiket kamu berhasil dibuat dengan nomor referensi #{$ticket->ticket_code}. Tim HR akan segera merespons.");
+            ->with('success', "Tiket kamu berhasil dibuat dengan nomor referensi #{$ticket->ticket_code} dan diteruskan ke tim {$ticket->assigned_team_label}.");
     }
 
     /**
@@ -264,6 +275,9 @@ class TicketController extends Controller
         }
 
         $ticket->load(['assignedTo', 'replies.user']);
+        $ticket->forceFill([
+            'employee_last_read_reply_id' => $ticket->replies()->max('id') ?? 0,
+        ])->save();
 
         return view('karyawan.tickets.show', compact('ticket'));
     }
@@ -294,13 +308,15 @@ class TicketController extends Controller
             $attachmentPath = $request->file('attachment')->store('ticket_attachments', 'public');
         }
 
-        TicketReply::create([
+        $reply = TicketReply::create([
             'ticket_id' => $ticket->id,
             'user_id' => Auth::id(),
             'message' => $validated['message'],
             'attachment' => $attachmentPath,
             'is_admin_reply' => false,
         ]);
+        $ticket->employee_last_read_reply_id = $reply->id;
+        $ticket->save();
 
         // Jika status resolved, kembalikan ke in_progress jika karyawan membalas lagi
         if ($ticket->status === 'resolved') {
@@ -308,5 +324,22 @@ class TicketController extends Controller
         }
 
         return back()->with('success', 'Tanggapan kamu berhasil dikirimkan.');
+    }
+
+    private function teamTickets()
+    {
+        $query = Ticket::query();
+
+        if (Auth::user()->isFinance()) {
+            return $query->whereIn('category', Ticket::FINANCE_CATEGORIES);
+        }
+
+        return $query->whereNotIn('category', Ticket::FINANCE_CATEGORIES);
+    }
+
+    private function authorizeTicketTeam(Ticket $ticket): void
+    {
+        $userTeam = Auth::user()->isFinance() ? 'finance' : 'hr';
+        abort_unless($ticket->assigned_team === $userTeam, 403, 'Tiket ini ditangani oleh tim lain.');
     }
 }

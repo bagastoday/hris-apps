@@ -4,16 +4,35 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Ticket extends Model
 {
+    public const CATEGORY_LABELS = [
+        'fasilitas' => 'Fasilitas & Sarana Kantor',
+        'reimburse' => 'Reimburse',
+        'payroll' => 'Gaji & Payroll',
+        'keuangan' => 'Pertanyaan Keuangan',
+        'bpjs' => 'BPJS & Asuransi',
+        'data_karyawan' => 'Data Karyawan',
+        'akun_karyawan' => 'Akun & Akses Karyawan',
+        'kebijakan' => 'Kebijakan HR & SOP',
+        'it_support' => 'IT & Jaringan',
+        'pengaduan' => 'Pengaduan / Whistleblowing',
+        'lainnya' => 'Pertanyaan Umum / Lainnya',
+    ];
+
+    public const FINANCE_CATEGORIES = ['reimburse', 'payroll', 'keuangan'];
+
     protected $fillable = [
         'ticket_code',
         'user_id',
         'assigned_to',
+        'team_last_read_reply_id',
+        'employee_last_read_reply_id',
         'title',
         'category',
         'priority',
@@ -46,6 +65,41 @@ class Ticket extends Model
         return $this->hasMany(TicketReply::class)->oldest();
     }
 
+    public function scopeWithUnreadForTeam(Builder $query): Builder
+    {
+        return $query->withExists([
+            'replies as has_unread_for_team' => fn (Builder $replies) => $replies
+                ->where('is_admin_reply', false)
+                ->whereColumn('ticket_replies.id', '>', 'tickets.team_last_read_reply_id'),
+        ]);
+    }
+
+    public function scopeWithUnreadForEmployee(Builder $query): Builder
+    {
+        return $query->withExists([
+            'replies as has_unread_for_employee' => fn (Builder $replies) => $replies
+                ->where('is_admin_reply', true)
+                ->whereColumn('ticket_replies.id', '>', 'tickets.employee_last_read_reply_id'),
+        ]);
+    }
+
+    public function scopeUnreadForTeam(Builder $query): Builder
+    {
+        return $query->where(function (Builder $tickets) {
+            $tickets->whereNull('team_last_read_reply_id')
+                ->orWhereHas('replies', fn (Builder $replies) => $replies
+                    ->where('is_admin_reply', false)
+                    ->whereColumn('ticket_replies.id', '>', 'tickets.team_last_read_reply_id'));
+        });
+    }
+
+    public function scopeUnreadForEmployee(Builder $query): Builder
+    {
+        return $query->whereHas('replies', fn (Builder $replies) => $replies
+            ->where('is_admin_reply', true)
+            ->whereColumn('ticket_replies.id', '>', 'tickets.employee_last_read_reply_id'));
+    }
+
     public static function generateTicketCode(): string
     {
         $prefix = 'TKT-' . date('Ym') . '-';
@@ -65,15 +119,17 @@ class Ticket extends Model
 
     public function getCategoryLabelAttribute(): string
     {
-        return match ($this->category) {
-            'fasilitas' => 'Fasilitas & Sarana',
-            'payroll' => 'Gaji & Payroll',
-            'bpjs' => 'BPJS & Asuransi',
-            'kebijakan' => 'Kebijakan HR & SOP',
-            'it_support' => 'IT & Jaringan',
-            'pengaduan' => 'Pengaduan / Whistleblowing',
-            default => 'Lainnya',
-        };
+        return self::CATEGORY_LABELS[$this->category] ?? 'Lainnya';
+    }
+
+    public function getAssignedTeamAttribute(): string
+    {
+        return in_array($this->category, self::FINANCE_CATEGORIES, true) ? 'finance' : 'hr';
+    }
+
+    public function getAssignedTeamLabelAttribute(): string
+    {
+        return $this->assigned_team === 'finance' ? 'Finance' : 'HR';
     }
 
     public function getPriorityLabelAttribute(): string

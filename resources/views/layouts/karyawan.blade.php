@@ -108,6 +108,9 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
                         </svg>
                         Pusat Bantuan
+                        @if($ticketUnreadCount > 0)
+                            <span class="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700">{{ $ticketUnreadCount }} tiket baru</span>
+                        @endif
                     </a>
                 </div>
             </div>
@@ -156,6 +159,7 @@
                          class="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50">
                         <div class="px-4 py-2 border-b border-slate-100">
                             <p class="text-xs font-bold text-slate-900 truncate">{{ auth()->user()?->name ?? 'Pegawai' }}</p>
+                            <p class="text-[11px] text-slate-500 truncate">{{ auth()->user()?->display_title }}</p>
                             <p class="text-[11px] text-slate-400 truncate">{{ auth()->user()?->email ?? auth()->user()?->nik }}</p>
                         </div>
                         <a href="{{ route('profile.edit') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-xs text-slate-700 hover:bg-slate-50 transition">
@@ -214,6 +218,9 @@
                class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold {{ request()->routeIs('karyawan.tickets*') ? 'bg-brand-50 text-brand-700' : 'text-slate-600' }}">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
                 Pusat Bantuan
+                @if($ticketUnreadCount > 0)
+                    <span class="ml-auto rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700">{{ $ticketUnreadCount }} tiket baru</span>
+                @endif
             </a>
             @if(auth()->user()?->isFinance())
                 <a href="{{ route('finance.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-emerald-700 bg-emerald-50">

@@ -46,7 +46,7 @@
             <div class="text-left sm:text-right text-xs text-slate-400">
                 <div>Diajukan pada {{ $ticket->created_at->translatedFormat('d F Y, H:i') }} WIB</div>
                 @if($ticket->assignedTo)
-                    <div class="text-blue-600 font-medium mt-0.5">PIC HR: {{ $ticket->assignedTo->name }}</div>
+                    <div class="text-blue-600 font-medium mt-0.5">PIC {{ $ticket->assigned_team_label }}: {{ $ticket->assignedTo->name }}</div>
                 @endif
             </div>
         </div>
@@ -89,11 +89,11 @@
                 <div class="flex items-center justify-between border-b {{ $reply->is_admin_reply ? 'border-blue-100' : 'border-slate-100' }} pb-3 mb-3">
                     <div class="flex items-center gap-2.5">
                         <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold {{ $reply->is_admin_reply ? 'bg-blue-600 text-white' : 'bg-slate-800 text-white' }}">
-                            {{ $reply->is_admin_reply ? 'HR' : substr($reply->user?->name ?? 'K', 0, 1) }}
+                            {{ $reply->is_admin_reply ? $ticket->assigned_team_label : substr($reply->user?->name ?? 'K', 0, 1) }}
                         </div>
                         <div>
                             <span class="font-bold text-xs text-slate-900">
-                                {{ $reply->is_admin_reply ? ($reply->user?->name . ' (Tim HR)') : 'Saya (' . $reply->user?->name . ')' }}
+                                {{ $reply->is_admin_reply ? ($reply->user?->name . ' (Tim ' . $ticket->assigned_team_label . ')') : 'Saya (' . $reply->user?->name . ')' }}
                             </span>
                             <div class="text-[10px] text-slate-400">
                                 {{ $reply->created_at->translatedFormat('d M Y, H:i') }} WIB
@@ -102,7 +102,7 @@
                     </div>
 
                     @if($reply->is_admin_reply)
-                        <span class="text-[10px] font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Respon Resmi HR</span>
+                        <span class="text-[10px] font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Respon Resmi {{ $ticket->assigned_team_label }}</span>
                     @else
                         <span class="text-[10px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">Tanggapan Saya</span>
                     @endif
@@ -125,8 +125,8 @@
         @empty
             <div class="bg-white rounded-2xl border border-dashed border-slate-200 p-8 text-center text-slate-400">
                 <svg class="w-10 h-10 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <p class="text-xs font-semibold text-slate-600">Tiket sedang dalam antrean tim HR</p>
-                <p class="text-[11px] text-slate-400 mt-0.5">Kamu akan melihat balasan atau solusi resmi HR di sini segera setelah ditindaklanjuti.</p>
+                <p class="text-xs font-semibold text-slate-600">Tiket sedang dalam antrean tim {{ $ticket->assigned_team_label }}</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">Kamu akan melihat balasan atau solusi resmi tim terkait di sini setelah tiket ditindaklanjuti.</p>
             </div>
         @endforelse
     </div>

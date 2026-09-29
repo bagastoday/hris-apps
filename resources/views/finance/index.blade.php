@@ -24,6 +24,17 @@
     </form>
 </div>
 
+@if($draftPayrollCount > 0 || $unpaidPayrollCount > 0)
+    <a href="#payroll-detail" class="mt-5 flex flex-col gap-1 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 transition hover:border-amber-300 sm:flex-row sm:items-center sm:justify-between">
+        <span class="text-sm font-semibold text-amber-900">Payroll perlu ditindaklanjuti</span>
+        <span class="text-xs text-amber-800">
+            @if($draftPayrollCount > 0){{ $draftPayrollCount }} draft perlu diperiksa @endif
+            @if($draftPayrollCount > 0 && $unpaidPayrollCount > 0) · @endif
+            @if($unpaidPayrollCount > 0){{ $unpaidPayrollCount }} pembayaran belum dicatat @endif
+        </span>
+    </a>
+@endif
+
 @if($errors->any())
     <div class="rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
         <ul class="list-inside list-disc space-y-1">
@@ -53,7 +64,7 @@
     </div>
 </div>
 
-<section class="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+<section id="payroll-detail" class="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
     <div class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h3 class="font-semibold text-slate-900">Rincian {{ \Carbon\Carbon::createFromFormat('!Y-m', $period)->translatedFormat('F Y') }}</h3>

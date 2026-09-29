@@ -27,8 +27,19 @@ class FinanceController extends Controller
             ->orderByDesc('period')
             ->take(12)
             ->get();
+        $draftPayrollCount = PayrollRun::where('status', 'draft')->count();
+        $unpaidPayrollCount = PayrollItem::whereHas('payrollRun', fn ($query) => $query
+            ->whereIn('status', ['processed', 'paid']))
+            ->where('payment_status', '!=', 'paid')
+            ->count();
 
-        return view('finance.index', compact('period', 'payroll', 'recentPayrolls'));
+        return view('finance.index', compact(
+            'period',
+            'payroll',
+            'recentPayrolls',
+            'draftPayrollCount',
+            'unpaidPayrollCount'
+        ));
     }
 
     public function salaries(): View

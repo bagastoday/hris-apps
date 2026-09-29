@@ -33,7 +33,11 @@
         }
     </script>
 </head>
-<body class="font-sans antialiased min-h-screen bg-gradient-to-br from-brand-950 via-brand-900 to-slate-950 flex items-center justify-center p-4 sm:p-6">
+<body class="relative isolate font-sans antialiased min-h-screen overflow-hidden bg-gradient-to-br from-sky-50 via-white to-indigo-50 flex items-center justify-center p-4 sm:p-6">
+
+    <div aria-hidden="true" class="pointer-events-none absolute -left-24 -top-28 h-80 w-80 rounded-full bg-sky-200/50 blur-3xl"></div>
+    <div aria-hidden="true" class="pointer-events-none absolute -bottom-32 -right-20 h-96 w-96 rounded-full bg-violet-200/40 blur-3xl"></div>
+    <div aria-hidden="true" class="pointer-events-none absolute right-1/4 top-1/4 h-40 w-40 rounded-full bg-blue-100/60 blur-3xl"></div>
 
     {{-- Card utama --}}
     <div class="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[520px]">

@@ -40,7 +40,8 @@
         </div>
 
         <div class="flex items-center gap-3 pt-2">
-            <button type="submit" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl shadow-sm transition">
+            <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-brand-600 to-blue-600 hover:from-brand-700 hover:to-blue-700 text-white text-sm font-semibold rounded-xl shadow-md shadow-brand-600/20 hover:shadow-lg hover:-translate-y-0.5 transition">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m5 12 4 4L19 6"/></svg>
                 Simpan
             </button>
             <a href="{{ route('departments.index') }}" class="px-5 py-2.5 text-slate-600 hover:text-slate-800 text-sm font-medium">

@@ -60,7 +60,7 @@
             <p class="font-bold text-sm text-slate-900 tracking-tight leading-none">Talenta<span class="text-brand-600">Core</span></p>
         </div>
 
-        <a href="{{ auth()->user()->role === 'hr' ? route('dashboard') : route('karyawan.home') }}"
+        <a href="{{ auth()->user()->hasHrAdminAccess() ? route('dashboard') : route('karyawan.home') }}"
            class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 transition">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
             Kembali
@@ -143,7 +143,7 @@
                                 class="flex-1 py-3 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition shadow-sm shadow-brand-600/30 hover:shadow-md hover:shadow-brand-600/30">
                             Simpan Perubahan
                         </button>
-                        <a href="{{ auth()->user()->role === 'hr' ? route('dashboard') : route('karyawan.home') }}"
+                        <a href="{{ auth()->user()->hasHrAdminAccess() ? route('dashboard') : route('karyawan.home') }}"
                            class="px-5 py-3 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 transition">
                             Batal
                         </a>

@@ -37,14 +37,64 @@ class User extends Authenticatable
         'remember_token',
     ];
     public function isHr(): bool
-{
-    return $this->role === 'hr';
-}
+    {
+        return $this->role === 'hr';
+    }
+
+    public function hasHrAdminAccess(): bool
+    {
+        if ($this->isHr()) {
+            return true;
+        }
+        if ($this->isFinance()) {
+            return false;
+        }
+
+        $employee = $this->employee;
+        if (!$employee || !$employee->department_id || !$employee->position_id) {
+            return false;
+        }
+
+        $employee->loadMissing(['department', 'position']);
+        $department = $employee->department;
+        $position = $employee->position;
+
+        if (!$department || !$position || $position->department_id !== $employee->department_id) {
+            return false;
+        }
+
+        $departmentName = strtolower(trim($department->name));
+        $departmentCode = strtoupper(trim((string) $department->code));
+        $positionName = strtolower(trim($position->name));
+
+        $isHrDepartment = in_array($departmentCode, ['HR', 'HRD'], true)
+            || preg_match('/\bhr\b/i', $departmentName) === 1
+            || str_contains($departmentName, 'human resource');
+        $isHrPosition = preg_match('/\bhr\b/i', $positionName) === 1
+            || str_contains($positionName, 'human resource');
+
+        return $isHrDepartment && $isHrPosition;
+    }
 
 public function isKaryawan(): bool
 {
     return $this->role === 'karyawan';
 }
+
+public function isFinance(): bool
+{
+    return $this->role === 'finance';
+}
+
+public function homeRouteName(): string
+{
+    if ($this->hasHrAdminAccess()) {
+        return 'dashboard';
+    }
+
+    return $this->isFinance() ? 'finance.index' : 'karyawan.home';
+}
+
 public function avatarUrl(): string
 {
     if ($this->avatar) {

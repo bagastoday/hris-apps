@@ -29,10 +29,13 @@ class EnsureUserHasRole
             ]);
         }
 
-        if (!empty($roles) && !in_array($user->role, $roles)) {
-            return $user->role === 'hr'
-                ? redirect()->route('dashboard')
-                : redirect()->route('karyawan.home');
+        $hasRole = empty($roles) || in_array($user->role, $roles, true);
+        if (!$hasRole && in_array('hr', $roles, true) && $user->hasHrAdminAccess()) {
+            $hasRole = true;
+        }
+
+        if (!$hasRole) {
+            return redirect()->route($user->homeRouteName());
         }
 
         return $next($request);

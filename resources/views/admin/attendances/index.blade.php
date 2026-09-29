@@ -21,19 +21,24 @@
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
     <div>
         <h2 class="text-lg font-semibold text-slate-900">Rekap Kehadiran</h2>
-        <p class="text-sm text-slate-500">{{ \Carbon\Carbon::parse($date)->translatedFormat('l, d F Y') }}</p>
+        <p class="text-sm text-slate-500">{{ \Carbon\Carbon::parse($date)->locale('id')->translatedFormat('l, d F Y') }}</p>
     </div>
 
-    <form method="GET" action="{{ route('attendances.index') }}" class="flex items-center gap-2">
-        <input type="date" name="date" value="{{ $date }}" onchange="this.form.submit()"
-               class="rounded-xl border-slate-200 text-sm focus:border-brand-500 focus:ring-brand-500">
-        <select name="department_id" onchange="this.form.submit()"
-                class="rounded-xl border-slate-200 text-sm focus:border-brand-500 focus:ring-brand-500">
-            <option value="">Semua Departemen</option>
-            @foreach($departments as $dept)
-                <option value="{{ $dept->id }}" @selected($departmentId == $dept->id)>{{ $dept->name }}</option>
-            @endforeach
-        </select>
+    <form method="GET" action="{{ route('attendances.index') }}" class="w-full sm:w-auto">
+        <input type="hidden" name="search" value="{{ $search }}">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2.5">
+            <input type="date" name="date" value="{{ $date }}"
+                   onchange="this.form.submit()"
+                   class="rounded-xl border-slate-200 text-sm shadow-sm focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10">
+            <select name="department_id"
+                    onchange="this.form.submit()"
+                    class="rounded-xl border-slate-200 text-sm shadow-sm focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10">
+                <option value="">Semua Departemen</option>
+                @foreach($departments as $dept)
+                    <option value="{{ $dept->id }}" @selected($departmentId == $dept->id)>{{ $dept->name }}</option>
+                @endforeach
+            </select>
+        </div>
     </form>
 </div>
 
@@ -51,6 +56,32 @@
         </div>
     @endforeach
 </div>
+
+<form method="GET" action="{{ route('attendances.index') }}" class="mb-4 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm sm:p-4">
+    <input type="hidden" name="date" value="{{ $date }}">
+    <input type="hidden" name="department_id" value="{{ $departmentId }}">
+    <div class="flex flex-col gap-2.5 sm:flex-row">
+        <label class="relative flex-1">
+            <span class="sr-only">Cari pegawai</span>
+            <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7" stroke-width="1.8"></circle>
+                <path stroke-linecap="round" stroke-width="1.8" d="m16 16 4 4"></path>
+            </svg>
+            <input type="search" name="search" value="{{ $search }}" placeholder="Cari nama, NIK, atau kode pegawai..."
+                   class="w-full rounded-xl border border-slate-200 bg-slate-50/60 py-2.5 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 transition focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-500/10">
+        </label>
+        <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-brand-600/20">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" stroke-width="1.8"></circle><path stroke-linecap="round" stroke-width="1.8" d="m16 16 4 4"></path></svg>
+            Cari
+        </button>
+        @if($search !== '')
+            <a href="{{ route('attendances.index', ['date' => $date, 'department_id' => $departmentId]) }}"
+               class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50">
+                Reset
+            </a>
+        @endif
+    </div>
+</form>
 
 {{-- Tabel --}}
 <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -99,7 +130,8 @@
                                     data-in-time="{{ $fmt($att->check_in) }}"
                                     data-out="{{ $att->check_out_photo ? asset('storage/' . $att->check_out_photo) : '' }}"
                                     data-out-time="{{ $fmt($att->check_out) }}"
-                                    class="text-brand-600 hover:text-brand-700 font-medium text-xs">
+                                    class="group inline-flex items-center gap-1.5 rounded-lg border border-sky-100 bg-sky-50 px-2.5 py-1.5 text-xs font-semibold text-sky-700 transition hover:border-sky-200 hover:bg-sky-100 hover:shadow-sm">
+                                    <svg class="h-3.5 w-3.5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5" stroke-width="1.8"/></svg>
                                     Lihat Foto
                                 </button>
                             @else
@@ -110,7 +142,7 @@
                 @empty
                     <tr>
                         <td colspan="7" class="px-5 py-12 text-center text-slate-400">
-                            Belum ada data absensi pada tanggal ini
+                            {{ $search !== '' ? 'Tidak ada data absensi yang cocok dengan pencarian ini.' : 'Belum ada data absensi pada tanggal ini.' }}
                         </td>
                     </tr>
                 @endforelse

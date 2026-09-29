@@ -2,15 +2,15 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\Department;
-use App\Models\Position;
-use App\Models\Employee;
 use App\Models\Attendance;
+use App\Models\Department;
+use App\Models\Employee;
 use App\Models\Leave;
+use App\Models\Position;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Carbon\Carbon;
 
 class DatabaseSeeder extends Seeder
 {
@@ -42,7 +42,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Andi Wijaya',
             'email' => 'andi@talentacore.id',
             'password' => Hash::make('password'),
-            'role' => 'karyawan',
+            'role' => 'finance',
         ]);
 
         // === DEPARTMENTS ===

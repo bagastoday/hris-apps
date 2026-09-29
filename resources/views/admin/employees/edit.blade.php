@@ -63,6 +63,12 @@
                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600 transition">
                 </div>
 
+                @if($employee->user && $employee->user->role !== 'hr')
+                    <div class="sm:col-span-2 rounded-xl border border-brand-100 bg-brand-50/70 p-3 text-sm text-brand-800">
+                        Akses akun mengikuti departemen. Memilih Finance/Accounting memberi akses Finance; departemen lainnya mendapat akses Karyawan.
+                    </div>
+                @endif
+
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1.5">No. Telepon</label>
                     <input type="text" name="phone" value="{{ old('phone', $employee->phone) }}"
@@ -123,7 +129,8 @@
             </div>
 
             <div class="flex gap-3 pt-3 border-t border-slate-100">
-                <button type="submit" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition shadow-sm shadow-brand-600/30">
+                <button type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-brand-600 to-blue-600 hover:from-brand-700 hover:to-blue-700 text-white text-sm font-semibold rounded-xl transition shadow-md shadow-brand-600/20 hover:shadow-lg hover:-translate-y-0.5">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m5 12 4 4L19 6"/></svg>
                     Simpan Perubahan
                 </button>
                 <a href="{{ route('employees.index') }}" class="px-6 py-2.5 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 transition">
@@ -147,7 +154,8 @@
         <form method="POST" action="{{ route('employees.reset-password', $employee) }}"
               onsubmit="return confirm('{{ $employee->user_id ? 'Reset password pegawai ini ke default?' : 'Buat akun login untuk pegawai ini?' }}');">
             @csrf
-            <button type="submit" class="px-5 py-2.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition">
+            <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 border border-amber-200 bg-amber-50 text-amber-800 text-sm font-semibold rounded-xl hover:bg-amber-100 hover:border-amber-300 transition">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 0 1 0 8m-8-8a4 4 0 0 0 0 8m-3 5a7 7 0 0 1 14 0M12 3v3m0 12v3"/></svg>
                 {{ $employee->user_id ? 'Reset Password ke Default' : 'Buat Akun Login' }}
             </button>
         </form>

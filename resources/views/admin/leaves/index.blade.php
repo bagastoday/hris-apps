@@ -14,7 +14,7 @@
     <div class="flex items-center gap-2">
         @foreach(['pending' => 'Pending', 'approved' => 'Disetujui', 'rejected' => 'Ditolak', 'semua' => 'Semua'] as $key => $label)
             <a href="{{ route('leaves.index', ['status' => $key]) }}"
-               class="px-3 py-1.5 rounded-lg text-xs font-medium transition {{ $status === $key ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+               class="px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ $status === $key ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/20' : 'bg-white border border-slate-200 text-slate-600 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700' }}">
                 {{ $label }}
             </a>
         @endforeach
@@ -78,9 +78,13 @@
                                 <div class="flex items-center justify-center gap-2">
                                     <form action="{{ route('leaves.approve', $leave) }}" method="POST" onsubmit="return confirm('Setujui pengajuan cuti ini?');">
                                         @csrf
-                                        <button type="submit" class="text-xs font-medium text-emerald-600 hover:text-emerald-700">Setujui</button>
+                                        <button type="submit" class="group inline-flex items-center gap-1.5 rounded-lg border border-emerald-100 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 transition hover:border-emerald-200 hover:bg-emerald-100 hover:shadow-sm">
+                                            <svg class="h-3.5 w-3.5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m5 12 4 4L19 6"/></svg>
+                                            Setujui
+                                        </button>
                                     </form>
-                                    <button type="button" onclick="document.getElementById('reject-modal-{{ $leave->id }}').classList.remove('hidden')" class="text-xs font-medium text-red-500 hover:text-red-600">
+                                    <button type="button" onclick="document.getElementById('reject-modal-{{ $leave->id }}').classList.remove('hidden')" class="group inline-flex items-center gap-1.5 rounded-lg border border-rose-100 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-600 transition hover:border-rose-200 hover:bg-rose-100 hover:shadow-sm">
+                                        <svg class="h-3.5 w-3.5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="m6 6 12 12M18 6 6 18"/></svg>
                                         Tolak
                                     </button>
                                 </div>

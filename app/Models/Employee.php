@@ -22,6 +22,7 @@ class Employee extends Model
         'department_id',
         'position_id',
         'employment_status',
+        'base_salary',
         'photo',
         'address',
     ];
@@ -29,6 +30,7 @@ class Employee extends Model
     protected $casts = [
         'birth_date' => 'date',
         'join_date' => 'date',
+        'base_salary' => 'decimal:2',
     ];
 
     // Pegawai aktif = semua status kecuali resign (aktif, kontrak, magang, cuti)

@@ -11,18 +11,19 @@
         <div>
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-medium mb-4 backdrop-blur-sm">
                 <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6z"/></svg>
-                TALENTACORE · {{ strtoupper(now()->translatedFormat('D, d M Y')) }}
+                TALENTACORE · {{ strtoupper(now()->locale('id')->translatedFormat('D, d M Y')) }}
             </div>
             <h2 class="text-2xl sm:text-3xl font-bold mb-2">Selamat datang!</h2>
             <p class="text-blue-100 text-sm sm:text-base max-w-md mb-5">
                 Kelola data pegawai, absensi, cuti, dan laporan SDM — semua dalam satu tempat.
             </p>
             <div class="flex flex-wrap gap-3">
-                <a href="{{ route('employees.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-brand-800 text-sm font-semibold rounded-xl hover:bg-blue-50 transition shadow-sm">
+                <a href="{{ route('employees.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-brand-800 text-sm font-semibold rounded-xl hover:bg-blue-50 hover:-translate-y-0.5 transition shadow-md shadow-brand-950/10">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     Tambah Pegawai
                 </a>
-                <a href="{{ route('attendances.index') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white/15 text-white text-sm font-medium rounded-xl hover:bg-white/25 transition backdrop-blur-sm border border-white/20">
+                <a href="{{ route('attendances.index') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white/10 text-white text-sm font-semibold rounded-xl hover:bg-white/20 hover:-translate-y-0.5 transition backdrop-blur-sm border border-white/25 shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                     Lihat Absensi
                 </a>
             </div>
@@ -133,6 +134,108 @@
 
 </div>
 
+{{-- Follow-up items --}}
+<section class="mb-6">
+    <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between mb-4">
+        <div>
+            <h2 class="text-lg font-bold text-slate-900">Perlu ditindaklanjuti</h2>
+            <p class="text-sm text-slate-500">Ringkasan hal yang perlu diperiksa oleh HR.</p>
+        </div>
+        <span class="text-xs font-medium text-slate-400">Diperbarui {{ now()->format('H:i') }}</span>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <article class="rounded-2xl border border-amber-100 bg-gradient-to-br from-white to-amber-50/70 p-5 shadow-sm">
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2Z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-slate-900">Pengajuan cuti</h3>
+                        <p class="text-xs text-slate-500">Menunggu persetujuan</p>
+                    </div>
+                </div>
+                <span class="rounded-full bg-amber-100 px-2.5 py-1 text-sm font-bold text-amber-800">{{ $cutiPending }}</span>
+            </div>
+            <div class="mt-4 min-h-24 space-y-2">
+                @forelse($pendingLeaves->take(3) as $leave)
+                    <div class="flex items-center justify-between gap-3 text-sm">
+                        <span class="truncate font-medium text-slate-700">{{ $leave->employee->full_name ?? 'Pegawai tidak ditemukan' }}</span>
+                        <span class="shrink-0 text-xs text-slate-400">{{ $leave->start_date->format('d M') }}</span>
+                    </div>
+                @empty
+                    <p class="rounded-xl bg-white/80 px-3 py-3 text-sm text-slate-500">Tidak ada cuti yang menunggu persetujuan.</p>
+                @endforelse
+            </div>
+            <a href="{{ route('leaves.index', ['status' => 'pending']) }}" class="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-amber-800 transition hover:text-amber-950">
+                Tinjau pengajuan
+                <svg class="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6 6 6-6 6"/></svg>
+            </a>
+        </article>
+
+        <article class="rounded-2xl border border-sky-100 bg-gradient-to-br from-white to-sky-50/70 p-5 shadow-sm">
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="1.8"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 7v5l3 2"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-slate-900">Belum tercatat absensi</h3>
+                        <p class="text-xs text-slate-500">Pegawai aktif, di luar cuti disetujui</p>
+                    </div>
+                </div>
+                <span class="rounded-full bg-sky-100 px-2.5 py-1 text-sm font-bold text-sky-800">{{ $notCheckedInCount }}</span>
+            </div>
+            <div class="mt-4 min-h-24 space-y-2">
+                @forelse($notCheckedInEmployees->take(3) as $employee)
+                    <div class="flex items-center justify-between gap-3 text-sm">
+                        <span class="truncate font-medium text-slate-700">{{ $employee->full_name }}</span>
+                        <span class="shrink-0 text-xs text-slate-400">{{ $employee->department->name ?? 'Tanpa departemen' }}</span>
+                    </div>
+                @empty
+                    <p class="rounded-xl bg-white/80 px-3 py-3 text-sm text-slate-500">Semua pegawai aktif sudah memiliki catatan absensi.</p>
+                @endforelse
+            </div>
+            <a href="{{ route('attendances.index', ['date' => $today]) }}" class="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-sky-800 transition hover:text-sky-950">
+                Lihat absensi hari ini
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6 6 6-6 6"/></svg>
+            </a>
+        </article>
+
+        <article class="rounded-2xl border border-violet-100 bg-gradient-to-br from-white to-violet-50/70 p-5 shadow-sm">
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4m0 4h.01M4.93 19h14.14a2 2 0 001.73-3L13.73 4a2 2 0 00-3.46 0L3.2 16a2 2 0 001.73 3Z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-slate-900">Data pegawai belum lengkap</h3>
+                        <p class="text-xs text-slate-500">Departemen atau jabatan belum diisi</p>
+                    </div>
+                </div>
+                <span class="rounded-full bg-violet-100 px-2.5 py-1 text-sm font-bold text-violet-800">{{ $incompleteEmployeeCount }}</span>
+            </div>
+            <div class="mt-4 min-h-24 space-y-2">
+                @forelse($incompleteEmployees->take(3) as $employee)
+                    <div class="flex items-center justify-between gap-3 text-sm">
+                        <span class="truncate font-medium text-slate-700">{{ $employee->full_name }}</span>
+                        <span class="shrink-0 text-xs text-violet-600">
+                            {{ !$employee->department_id ? 'Departemen kosong' : '' }}{{ !$employee->department_id && !$employee->position_id ? ' · ' : '' }}{{ !$employee->position_id ? 'Jabatan kosong' : '' }}
+                        </span>
+                    </div>
+                @empty
+                    <p class="rounded-xl bg-white/80 px-3 py-3 text-sm text-slate-500">Semua data departemen dan jabatan sudah lengkap.</p>
+                @endforelse
+            </div>
+            <a href="{{ route('employees.index') }}" class="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-violet-800 transition hover:text-violet-950">
+                Periksa data pegawai
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6 6 6-6 6"/></svg>
+            </a>
+        </article>
+    </div>
+</section>
+
 {{-- Bottom sections --}}
 <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
 
@@ -143,7 +246,7 @@
                 <h3 class="font-semibold text-slate-900">Hari ini</h3>
             </div>
             <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
-                {{ now()->translatedFormat('D, d M Y') }}
+                {{ now()->locale('id')->translatedFormat('D, d M Y') }}
             </span>
         </div>
 
@@ -166,8 +269,16 @@
     </div>
 </div>
 
-        <div class="px-5 py-8 text-center text-sm text-slate-400">
-            Belum ada data absensi hari ini
+        <div class="px-5 py-6 text-center">
+            @if($totalAttendanceHariIni > 0)
+                <p class="text-sm text-slate-500">{{ $totalAttendanceHariIni }} catatan absensi tercatat hari ini.</p>
+            @else
+                <p class="text-sm text-slate-400">Belum ada data absensi hari ini.</p>
+            @endif
+            <a href="{{ route('attendances.index', ['date' => $today]) }}" class="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 transition hover:text-brand-800">
+                Buka rekap absensi
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6 6 6-6 6"/></svg>
+            </a>
         </div>
     </div>
 

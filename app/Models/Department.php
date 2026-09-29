@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Department extends Model
 {
@@ -20,5 +21,14 @@ class Department extends Model
     public function employees()
     {
         return $this->hasMany(Employee::class);
+    }
+
+    public function isFinanceDepartment(): bool
+    {
+        $code = Str::upper(trim((string) $this->code));
+        $name = Str::lower(trim($this->name));
+
+        return in_array($code, ['FIN', 'FINANCE', 'ACCOUNTING', 'AKUNTANSI', 'KEUANGAN'], true)
+            || Str::contains($name, ['finance', 'accounting', 'akuntansi', 'keuangan']);
     }
 }

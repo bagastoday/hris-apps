@@ -11,7 +11,7 @@
         <h2 class="text-lg font-semibold text-slate-900">Daftar Departemen</h2>
         <p class="text-sm text-slate-500">Total {{ $departments->count() }} departemen</p>
     </div>
-    <a href="{{ route('departments.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl shadow-sm transition">
+    <a href="{{ route('departments.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-brand-600 to-blue-600 hover:from-brand-700 hover:to-blue-700 text-white text-sm font-semibold rounded-xl shadow-md shadow-brand-600/20 hover:shadow-lg hover:-translate-y-0.5 transition duration-200">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Tambah Departemen
     </a>
@@ -64,12 +64,18 @@
                             @endif
                         </td>
                         <td class="px-4 py-4">
-                            <div class="flex items-center justify-center gap-3">
-                                <a href="{{ route('departments.edit', $dept) }}" class="text-brand-600 hover:text-brand-700 font-medium text-xs">Edit</a>
+                            <div class="flex items-center justify-center gap-2">
+                                <a href="{{ route('departments.edit', $dept) }}" class="group inline-flex items-center gap-1.5 rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-xs font-semibold text-brand-700 transition hover:border-brand-200 hover:bg-brand-100 hover:shadow-sm">
+                                    <svg class="h-3.5 w-3.5 transition-transform group-hover:-rotate-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m16.862 4.487 2.651 2.651M8 16l8.5-8.5a2.121 2.121 0 0 1 3 3L11 19H8v-3Z"/></svg>
+                                    Edit
+                                </a>
                                 <form action="{{ route('departments.destroy', $dept) }}" method="POST" onsubmit="return confirm('Yakin mau hapus departemen ini?');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-red-500 hover:text-red-600 font-medium text-xs">Hapus</button>
+                                    <button type="submit" class="group inline-flex items-center gap-1.5 rounded-lg border border-rose-100 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-600 transition hover:border-rose-200 hover:bg-rose-100 hover:shadow-sm">
+                                        <svg class="h-3.5 w-3.5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7h16M10 11v6m4-6v6M5 7l1 13h12l1-13M9 7V4h6v3"/></svg>
+                                        Hapus
+                                    </button>
                                 </form>
                             </div>
                         </td>

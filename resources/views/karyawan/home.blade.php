@@ -59,12 +59,19 @@
             </div>
 
             <div class="flex items-center gap-3">
-                @if(auth()->user()?->role === 'hr')
+                @if(auth()->user()?->isFinance())
+                    <a href="{{ route('finance.index') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-50 text-brand-700 hover:bg-brand-100 transition">
+                        Dashboard Finance
+                    </a>
+                @elseif(auth()->user()?->hasHrAdminAccess())
                     <a href="{{ route('dashboard') }}" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-50 text-brand-700 hover:bg-brand-100 transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                         Dashboard Admin
                     </a>
                 @endif
+                <a href="{{ route('karyawan.payroll') }}" class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                    Slip Gaji
+                </a>
 
                 {{-- User Profile Pill --}}
                 <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-100/80 rounded-full">
@@ -127,7 +134,7 @@
                 {{-- Realtime Digital Clock Widget --}}
                 <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-6 py-4 text-center md:text-right shrink-0 shadow-lg">
                     <p id="live-date" class="text-xs font-medium text-blue-200 uppercase tracking-wider mb-1">
-                        {{ now()->translatedFormat('l, d F Y') }}
+                        {{ now()->locale('id')->translatedFormat('l, d F Y') }}
                     </p>
                     <div class="font-mono text-3xl sm:text-4xl font-extrabold text-white tracking-widest drop-shadow-sm flex items-center justify-center md:justify-end gap-1">
                         <span id="live-clock">--:--:--</span>
@@ -494,13 +501,26 @@
         // Realtime Clock
         function updateClock() {
             const now = new Date();
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            const timeStr = `${hours}:${minutes}:${seconds}`;
+            const timeStr = new Intl.DateTimeFormat('id-ID', {
+                timeZone: 'Asia/Jakarta',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hourCycle: 'h23',
+            }).format(now);
+            const dateStr = new Intl.DateTimeFormat('id-ID', {
+                timeZone: 'Asia/Jakarta',
+                weekday: 'long',
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric',
+            }).format(now);
 
             const clockEl = document.getElementById('live-clock');
             if (clockEl) clockEl.textContent = timeStr;
+
+            const dateEl = document.getElementById('live-date');
+            if (dateEl) dateEl.textContent = dateStr;
 
             const camClock = document.getElementById('cam-clock');
             if (camClock) camClock.textContent = timeStr + ' WIB';

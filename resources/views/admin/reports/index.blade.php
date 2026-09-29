@@ -30,24 +30,35 @@
     }
 @endphp
 
-<div class="mb-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-100 text-xs text-amber-700">
-    Angka kehadiran masih data contoh (dummy)
-</div>
-
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
     <div>
         <h2 class="text-lg font-semibold text-slate-900">Laporan Bulanan</h2>
-        <p class="text-sm text-slate-500">Periode {{ \Carbon\Carbon::createFromFormat('Y-m', $period)->translatedFormat('F Y') }}</p>
+        <p class="text-sm text-slate-500">Periode {{ \Carbon\Carbon::createFromFormat('!Y-m', $period)->translatedFormat('F Y') }}</p>
     </div>
-    <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2">
         <form method="GET" action="{{ route('reports.index') }}">
             <input type="month" name="period" value="{{ $period }}" onchange="this.form.submit()"
                    class="rounded-xl border-slate-200 text-sm focus:border-brand-500 focus:ring-brand-500">
+            <select name="department_id" onchange="this.form.submit()"
+                    class="rounded-xl border-slate-200 text-sm focus:border-brand-500 focus:ring-brand-500">
+                <option value="">Semua Departemen</option>
+                @foreach($departments as $department)
+                    <option value="{{ $department->id }}" @selected((string) $departmentId === (string) $department->id)>
+                        {{ $department->name }}
+                    </option>
+                @endforeach
+            </select>
         </form>
-        <button type="button" disabled title="Belum aktif"
-                class="px-4 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-400 cursor-not-allowed">Export Excel</button>
-        <button type="button" disabled title="Belum aktif"
-                class="px-4 py-2 rounded-xl bg-slate-200 text-slate-400 text-sm font-semibold cursor-not-allowed">Export PDF</button>
+        <a href="{{ route('reports.export.excel', ['period' => $period, 'department_id' => $departmentId]) }}"
+           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3v12m0 0 4-4m-4 4-4-4m-5 8h18"/></svg>
+            Export Excel
+        </a>
+        <a href="{{ route('reports.export.pdf', ['period' => $period, 'department_id' => $departmentId]) }}"
+           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 text-white text-sm font-semibold hover:bg-slate-700">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3v12m0 0 4-4m-4 4-4-4m-5 8h18"/></svg>
+            Export PDF
+        </a>
     </div>
 </div>
 
@@ -161,6 +172,8 @@
                     <th class="px-4 py-3.5 font-medium text-center">Hadir</th>
                     <th class="px-4 py-3.5 font-medium text-center">Terlambat</th>
                     <th class="px-4 py-3.5 font-medium text-center">Izin</th>
+                    <th class="px-4 py-3.5 font-medium text-center">Sakit</th>
+                    <th class="px-4 py-3.5 font-medium text-center">Cuti</th>
                     <th class="px-4 py-3.5 font-medium text-center">Alpha</th>
                     <th class="px-4 py-3.5 font-medium text-center">Kehadiran</th>
                 </tr>
@@ -176,12 +189,14 @@
                         <td class="px-4 py-4 text-center text-slate-600">{{ $row['hadir'] }}</td>
                         <td class="px-4 py-4 text-center text-amber-600">{{ $row['terlambat'] }}</td>
                         <td class="px-4 py-4 text-center text-sky-600">{{ $row['izin'] }}</td>
+                        <td class="px-4 py-4 text-center text-sky-600">{{ $row['sakit'] }}</td>
+                        <td class="px-4 py-4 text-center text-sky-600">{{ $row['cuti'] }}</td>
                         <td class="px-4 py-4 text-center text-red-600">{{ $row['alpha'] }}</td>
                         <td class="px-4 py-4 text-center font-semibold text-slate-900">{{ $row['persen'] }}%</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="px-5 py-12 text-center text-slate-400">
+                        <td colspan="9" class="px-5 py-12 text-center text-slate-400">
                             Belum ada data pegawai aktif
                         </td>
                     </tr>

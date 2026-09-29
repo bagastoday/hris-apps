@@ -33,7 +33,10 @@
         }
     </script>
 </head>
-<body class="font-sans antialiased min-h-screen bg-gradient-to-br from-brand-950 via-brand-900 to-slate-950 flex items-center justify-center p-4">
+<body class="relative isolate font-sans antialiased min-h-screen overflow-x-hidden bg-gradient-to-br from-sky-50 via-white to-indigo-50 flex items-center justify-center p-4">
+
+    <div aria-hidden="true" class="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-sky-200/50 blur-3xl"></div>
+    <div aria-hidden="true" class="pointer-events-none absolute -bottom-28 -right-20 h-96 w-96 rounded-full bg-violet-200/40 blur-3xl"></div>
 
     <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden">
 
@@ -62,6 +65,12 @@
         {{-- Form --}}
         <div class="p-8 pt-6">
 
+            <a href="{{ route('login') }}"
+               onclick="if (window.history.length > 1) { event.preventDefault(); window.history.back(); }"
+               class="mb-5 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-500/10">
+                Kembali
+            </a>
+
             @if ($errors->any())
                 <div class="mb-5 p-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-600 text-center">
                     {{ $errors->first() }}
@@ -72,10 +81,10 @@
                 @csrf
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Email</label>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Email atau NIK/kode kantor</label>
                     <input type="text" name="login" value="{{ old('login') }}" required autofocus
                         placeholder="Email atau NIK (contoh: EMP-004)"
-                        class="...class yang sudah ada...">
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition">
                 </div>
 
                 <div>
@@ -87,9 +96,9 @@
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Password Baru</label>
-                    <input type="password" name="password" required minlength="6"
+                    <input type="password" name="password" required minlength="8"
                            class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition"
-                           placeholder="Minimal 6 karakter">
+                           placeholder="Minimal 8 karakter">
                 </div>
 
                 <div>
@@ -104,12 +113,6 @@
                     Simpan Password Baru
                 </button>
             </form>
-
-            <p class="text-center mt-6">
-                <a href="{{ route('login') }}" class="text-sm text-brand-700 hover:text-brand-800 font-medium">
-                    ← Kembali ke Login
-                </a>
-            </p>
         </div>
     </div>
 </body>

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
-use App\Models\Employee;
+use App\Models\PayrollItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -16,11 +16,6 @@ class KaryawanAttendanceController extends Controller
     {
         $user = Auth::user();
         $employee = $user->employee;
-
-        // Jika HR mengakses portal dan belum punya data employee, gunakan data employee pertama untuk keperluan preview/uji coba
-        if (!$employee && $user->role === 'hr') {
-            $employee = Employee::first();
-        }
 
         $today = today();
         $todayAttendance = null;
@@ -40,15 +35,25 @@ class KaryawanAttendanceController extends Controller
         return view('karyawan.home', compact('employee', 'todayAttendance', 'recentAttendances', 'today'));
     }
 
+    public function payslips()
+    {
+        $employee = Auth::user()->employee;
+        $payslips = $employee
+            ? PayrollItem::with('payrollRun')
+                ->where('employee_id', $employee->id)
+                ->whereHas('payrollRun', fn ($query) => $query->whereIn('status', ['processed', 'paid']))
+                ->latest()
+                ->get()
+            : collect();
+
+        return view('karyawan.payroll', compact('employee', 'payslips'));
+    }
+
     // Proses Absen Masuk dengan Foto & Jam Realtime
     public function checkIn(Request $request)
     {
         $user = Auth::user();
         $employee = $user->employee;
-
-        if (!$employee && $user->role === 'hr') {
-            $employee = Employee::first();
-        }
 
         if (!$employee) {
             return back()->with('error', 'Data pegawai kamu tidak ditemukan. Hubungi HR.');
@@ -96,10 +101,6 @@ class KaryawanAttendanceController extends Controller
     {
         $user = Auth::user();
         $employee = $user->employee;
-
-        if (!$employee && $user->role === 'hr') {
-            $employee = Employee::first();
-        }
 
         if (!$employee) {
             return back()->with('error', 'Data pegawai kamu tidak ditemukan. Hubungi HR.');

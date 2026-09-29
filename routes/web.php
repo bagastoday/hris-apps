@@ -1,26 +1,34 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\KaryawanAttendanceController;
+use App\Http\Controllers\LeaveController;
+use App\Http\Controllers\PositionController;
+use App\Http\Controllers\ReportController;
+use App\Models\Attendance;
+use App\Models\Department;
+use App\Models\Employee;
+use App\Models\Leave;
+use App\Models\Position;
+use App\Models\User;
+use App\Support\EmployeeEmailGenerator;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password;
-use App\Http\Controllers\DepartmentController;
-use App\Http\Controllers\LeaveController;
-use App\Http\Controllers\PositionController;
-use App\Http\Controllers\KaryawanAttendanceController;
+use Illuminate\Validation\ValidationException;
 
 // ========== AUTH ==========
 Route::get('/login', function () {
     if (Auth::check()) {
-        return Auth::user()->role === 'hr'
-            ? redirect()->route('dashboard')
-            : redirect()->route('karyawan.home');
+        return redirect()->route(Auth::user()->homeRouteName());
     }
+
     return view('auth.login');
 })->name('login');
 
@@ -33,7 +41,7 @@ Route::post('/login', function (Request $request) {
     ]);
 
     $login = trim($request->login);
-    $key = 'login:' . strtolower($login) . '|' . $request->ip();
+    $key = 'login:'.strtolower($login).'|'.$request->ip();
 
     if (RateLimiter::tooManyAttempts($key, 5)) {
         $seconds = RateLimiter::availableIn($key);
@@ -46,17 +54,17 @@ Route::post('/login', function (Request $request) {
         $email = $login;
     } else {
         $nik = strtoupper($login);
-        $user = \App\Models\User::where('nik', $nik)->first();
-        if (!$user) {
-            $employee = \App\Models\Employee::where('nik', $nik)->first();
-            $user = $employee?->user_id ? \App\Models\User::find($employee->user_id) : null;
+        $user = User::where('nik', $nik)->first();
+        if (! $user) {
+            $employee = Employee::where('nik', $nik)->first();
+            $user = $employee?->user_id ? User::find($employee->user_id) : null;
         }
         $email = $user?->email;
     }
 
     if ($email && Auth::attempt(['email' => $email, 'password' => $request->password], $request->boolean('remember'))) {
         $employee = Auth::user()->employee;
-        if ($employee && !$employee->isActive()) {
+        if ($employee && ! $employee->isActive()) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -69,9 +77,7 @@ Route::post('/login', function (Request $request) {
         RateLimiter::clear($key);
         $request->session()->regenerate();
 
-        return Auth::user()->role === 'hr'
-            ? redirect()->intended(route('dashboard'))
-            : redirect()->intended(route('karyawan.home'));
+        return redirect()->intended(route(Auth::user()->homeRouteName()));
     }
 
     RateLimiter::hit($key, 60);
@@ -85,19 +91,21 @@ Route::post('/logout', function (Request $request) {
     Auth::logout();
     $request->session()->invalidate();
     $request->session()->regenerateToken();
+
     return redirect()->route('login');
 })->name('logout');
 
 // ========== PROFIL ==========
 Route::get('/profile', function () {
-    if (!Auth::check()) {
+    if (! Auth::check()) {
         return redirect()->route('login');
     }
+
     return view('auth.profile', ['user' => Auth::user()]);
 })->name('profile.edit');
 
 Route::match(['post', 'put'], '/profile', function (Request $request) {
-    if (!Auth::check()) {
+    if (! Auth::check()) {
         return redirect()->route('login');
     }
 
@@ -126,8 +134,8 @@ Route::get('/change-password', function () {
 })->name('password.change');
 
 Route::post('/change-password', function (Request $request) {
-    $request->validate([
-        'email' => ['required', 'email', 'max:255'],
+    $validated = $request->validate([
+        'login' => ['required', 'string', 'max:255'],
         'current_password' => ['required', 'string'],
         'password' => [
             'required',
@@ -142,22 +150,33 @@ Route::post('/change-password', function (Request $request) {
         'password.confirmed' => 'Konfirmasi password tidak cocok.',
     ]);
 
-    $key = 'change-pw:' . strtolower($request->email) . '|' . $request->ip();
+    $login = trim($validated['login']);
+    $key = 'change-pw:'.strtolower($login).'|'.$request->ip();
 
     if (RateLimiter::tooManyAttempts($key, 5)) {
         $seconds = RateLimiter::availableIn($key);
         throw ValidationException::withMessages([
-            'email' => "Terlalu banyak percobaan. Coba lagi dalam {$seconds} detik.",
+            'login' => "Terlalu banyak percobaan. Coba lagi dalam {$seconds} detik.",
         ]);
     }
 
-    $user = \App\Models\User::where('email', $request->email)->first();
+    if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
+        $user = User::where('email', $login)->first();
+    } else {
+        $nik = strtoupper($login);
+        $user = User::where('nik', $nik)->first();
+        if (! $user) {
+            $employee = Employee::where('nik', $nik)->first();
+            $user = $employee?->user_id ? User::find($employee->user_id) : null;
+        }
+    }
 
-    if (!$user || !Hash::check($request->current_password, $user->password)) {
+    if (! $user || ! Hash::check($request->current_password, $user->password)) {
         RateLimiter::hit($key, 60);
+
         return back()->withErrors([
-            'email' => 'Email atau password lama salah.',
-        ])->withInput($request->only('email'));
+            'login' => 'Email/NIK atau password lama salah.',
+        ])->withInput($request->only('login'));
     }
 
     RateLimiter::clear($key);
@@ -169,66 +188,126 @@ Route::post('/change-password', function (Request $request) {
     return redirect()->route('login')->with('success', 'Password berhasil diubah. Silakan login dengan password baru.');
 })->name('password.change.submit');
 
+// ========== FINANCE & PAYROLL ==========
+Route::middleware('role:finance')->prefix('finance')->name('finance.')->group(function () {
+    Route::get('/', [FinanceController::class, 'index'])->name('index');
+    Route::get('/salaries', [FinanceController::class, 'salaries'])->name('salaries');
+    Route::put('/employees/{employee}/salary', [FinanceController::class, 'updateSalary'])->name('salary.update');
+    Route::post('/payroll', [FinanceController::class, 'createPayroll'])->name('payroll.store');
+    Route::put('/payroll/{payroll}/items/{item}', [FinanceController::class, 'updateItem'])->name('payroll.items.update');
+    Route::post('/payroll/{payroll}/finalize', [FinanceController::class, 'finalize'])->name('payroll.finalize');
+    Route::post('/payroll/{payroll}/items/{item}/paid', [FinanceController::class, 'markPaid'])->name('payroll.items.paid');
+});
+
 // ========== DASHBOARD HR ==========
 Route::get('/', function () {
-    $totalEmployees = \App\Models\Employee::active()->count();
-    $totalDepartments = \App\Models\Department::where('is_active', true)->count();
-    $hadirHariIni = \App\Models\Attendance::whereDate('date', today())->where('status', 'hadir')->count();
-    $terlambatHariIni = \App\Models\Attendance::whereDate('date', today())->where('status', 'terlambat')->count();
-    $alphaHariIni = \App\Models\Attendance::whereDate('date', today())->where('status', 'alpha')->count();
-    $cutiHariIni = \App\Models\Attendance::whereDate('date', today())->where('status', 'cuti')->count();
-    $cutiPending = \App\Models\Leave::where('status', 'pending')->count();
-    $pendingLeaves = \App\Models\Leave::with('employee')
+    $today = today()->toDateString();
+    $totalEmployees = Employee::active()->count();
+    $totalDepartments = Department::where('is_active', true)->count();
+    $totalAttendanceHariIni = Attendance::whereDate('date', $today)->count();
+    $hadirHariIni = Attendance::whereDate('date', $today)->where('status', 'hadir')->count();
+    $terlambatHariIni = Attendance::whereDate('date', $today)->where('status', 'terlambat')->count();
+    $alphaHariIni = Attendance::whereDate('date', $today)->where('status', 'alpha')->count();
+    $cutiHariIni = Attendance::whereDate('date', $today)->where('status', 'cuti')->count();
+    $cutiPending = Leave::where('status', 'pending')->count();
+    $pendingLeaves = Leave::with('employee')
         ->where('status', 'pending')
         ->latest()
         ->take(5)
         ->get();
+    $employeesNotCheckedInQuery = Employee::active()
+        ->whereDoesntHave('attendances', fn ($query) => $query->whereDate('date', $today))
+        ->whereDoesntHave('leaves', fn ($query) => $query
+            ->where('status', 'approved')
+            ->whereDate('start_date', '<=', $today)
+            ->whereDate('end_date', '>=', $today));
+    $notCheckedInCount = (clone $employeesNotCheckedInQuery)->count();
+    $notCheckedInEmployees = (clone $employeesNotCheckedInQuery)
+        ->with('department')
+        ->orderBy('full_name')
+        ->take(5)
+        ->get();
+    $employeesWithIncompleteDataQuery = Employee::active()
+        ->where(fn ($query) => $query->whereNull('department_id')->orWhereNull('position_id'));
+    $incompleteEmployeeCount = (clone $employeesWithIncompleteDataQuery)->count();
+    $incompleteEmployees = (clone $employeesWithIncompleteDataQuery)
+        ->orderBy('full_name')
+        ->take(5)
+        ->get();
 
     return view('admin.dashboard', compact(
+        'today',
         'totalEmployees',
         'totalDepartments',
+        'totalAttendanceHariIni',
         'hadirHariIni',
         'terlambatHariIni',
         'alphaHariIni',
         'cutiHariIni',
         'cutiPending',
-        'pendingLeaves'
+        'pendingLeaves',
+        'notCheckedInCount',
+        'notCheckedInEmployees',
+        'incompleteEmployeeCount',
+        'incompleteEmployees'
     ));
 })->name('dashboard')->middleware('role:hr');
 
 // ========== PORTAL KARYAWAN & ABSENSI REALTIME ==========
 Route::get('/karyawan', [KaryawanAttendanceController::class, 'index'])
     ->name('karyawan.home')
-    ->middleware('role:karyawan,hr');
+    ->middleware('role:karyawan,hr,finance');
 
 Route::get('/karyawan/absensi', [KaryawanAttendanceController::class, 'index'])
     ->name('karyawan.attendance')
-    ->middleware('role:karyawan,hr');
+    ->middleware('role:karyawan,hr,finance');
 
 Route::post('/karyawan/absensi/check-in', [KaryawanAttendanceController::class, 'checkIn'])
     ->name('karyawan.attendance.checkin')
-    ->middleware('role:karyawan,hr');
+    ->middleware('role:karyawan,hr,finance');
 
 Route::post('/karyawan/absensi/check-out', [KaryawanAttendanceController::class, 'checkOut'])
     ->name('karyawan.attendance.checkout')
-    ->middleware('role:karyawan,hr');
+    ->middleware('role:karyawan,hr,finance');
+
+Route::get('/karyawan/payroll', [KaryawanAttendanceController::class, 'payslips'])
+    ->name('karyawan.payroll')
+    ->middleware('role:karyawan,hr,finance');
 
 // ========== PEGAWAI (HR only) ==========
-Route::get('/employees', function () {
-    $employees = \App\Models\Employee::with(['department', 'position'])->latest()->get();
-    return view('admin.employees.index', compact('employees'));
+Route::get('/employees', function (Request $request) {
+    $filters = $request->validate([
+        'search' => ['nullable', 'string', 'max:100'],
+        'department_id' => ['nullable', 'integer', 'exists:departments,id'],
+    ]);
+    $search = trim($filters['search'] ?? '');
+    $departmentId = $filters['department_id'] ?? '';
+
+    $employees = Employee::with(['department', 'position'])
+        ->when($departmentId !== '', fn ($query) => $query->where('department_id', $departmentId))
+        ->when($search !== '', fn ($query) => $query->where(fn ($terms) => $terms
+            ->where('full_name', 'like', "%{$search}%")
+            ->orWhere('employee_code', 'like', "%{$search}%")
+            ->orWhere('nik', 'like', "%{$search}%")
+            ->orWhere('email', 'like', "%{$search}%")))
+        ->latest()
+        ->get();
+    $departments = Department::where('is_active', true)->orderBy('name')->get();
+
+    return view('admin.employees.index', compact('employees', 'departments', 'search', 'departmentId'));
 })->name('employees.index')->middleware('role:hr');
 
 Route::get('/employees/create', function () {
-    $departments = \App\Models\Department::where('is_active', true)->get();
-    $positions = \App\Models\Position::where('is_active', true)->get();
+    $departments = Department::where('is_active', true)->get();
+    $positions = Position::where('is_active', true)->get();
+
     return view('admin.employees.create', compact('departments', 'positions'));
 })->name('employees.create')->middleware('role:hr');
 
 Route::post('/employees', function (Request $request) {
     $data = $request->validate([
         'full_name' => 'required|string|max:255',
-        'email' => 'nullable|email|unique:employees,email|unique:users,email',
+        'email_option' => ['required', 'in:email,no_email'],
         'phone' => 'nullable|string|max:20',
         'gender' => 'nullable|in:laki-laki,perempuan',
         'birth_date' => 'nullable|date',
@@ -237,9 +316,16 @@ Route::post('/employees', function (Request $request) {
         'position_id' => 'nullable|exists:positions,id',
         'employment_status' => 'required|in:aktif,kontrak,magang,resign,cuti',
     ]);
+    $data['full_name'] = mb_strtoupper(trim($data['full_name']), 'UTF-8');
+    $data['email'] = $data['email_option'] === 'email'
+        ? EmployeeEmailGenerator::generateUnique($data['full_name'])
+        : null;
+    unset($data['email_option']);
+    $department = isset($data['department_id']) ? Department::find($data['department_id']) : null;
+    $accountRole = $department?->isFinanceDepartment() ? 'finance' : 'karyawan';
 
-    if (!empty($data['position_id'])) {
-        $position = \App\Models\Position::find($data['position_id']);
+    if (! empty($data['position_id'])) {
+        $position = Position::find($data['position_id']);
         if ($position->department_id != ($data['department_id'] ?? null)) {
             return back()->withErrors([
                 'position_id' => 'Jabatan tidak sesuai dengan departemen yang dipilih.',
@@ -247,41 +333,46 @@ Route::post('/employees', function (Request $request) {
         }
     }
 
-    $last = \App\Models\Employee::orderByRaw("CAST(REPLACE(employee_code, 'EMP-', '') AS UNSIGNED) DESC")->first();
+    $last = Employee::orderByRaw("CAST(REPLACE(employee_code, 'EMP-', '') AS UNSIGNED) DESC")->first();
     $num = $last ? ((int) str_replace('EMP-', '', $last->employee_code)) + 1 : 1;
-    $code = 'EMP-' . str_pad($num, 3, '0', STR_PAD_LEFT);
+    $code = 'EMP-'.str_pad($num, 3, '0', STR_PAD_LEFT);
 
     $data['employee_code'] = $code;
     $data['nik'] = $code;
 
-    DB::transaction(function () use ($data) {
-        $user = \App\Models\User::create([
+    $accountEmail = $data['email'] ?? strtolower($code).'@talenta.local';
+
+    DB::transaction(function () use ($data, $accountEmail, $accountRole) {
+        $user = User::create([
             'name' => $data['full_name'],
-            'email' => $data['email'] ?? strtolower($data['employee_code']) . '@talenta.local',
-            'password' => Hash::make(\App\Models\Employee::DEFAULT_PASSWORD),
-            'role' => 'karyawan',
+            'email' => $accountEmail,
+            'password' => Hash::make(Employee::DEFAULT_PASSWORD),
+            'role' => $accountRole,
         ]);
 
         $data['user_id'] = $user->id;
-        \App\Models\Employee::create($data);
+        Employee::create($data);
     });
 
     return redirect()->route('employees.index')->with(
         'success',
-        "Pegawai berhasil ditambahkan dengan kode {$code}. Login pakai NIK {$code} atau email, password default: " . \App\Models\Employee::DEFAULT_PASSWORD
+        $data['email']
+            ? "Pegawai berhasil ditambahkan dengan kode {$code} dan email {$data['email']}. Login pakai NIK {$code} atau email tersebut, password default: ".Employee::DEFAULT_PASSWORD
+            : "Pegawai berhasil ditambahkan tanpa email dengan kode kantor {$code}. Login pakai NIK/kode kantor tersebut, password default: ".Employee::DEFAULT_PASSWORD
     );
 })->name('employees.store')->middleware('role:hr');
 
-Route::get('/employees/{employee}/edit', function (\App\Models\Employee $employee) {
-    $departments = \App\Models\Department::where('is_active', true)->get();
-    $positions = \App\Models\Position::where('is_active', true)->get();
+Route::get('/employees/{employee}/edit', function (Employee $employee) {
+    $departments = Department::where('is_active', true)->get();
+    $positions = Position::where('is_active', true)->get();
+
     return view('admin.employees.edit', compact('employee', 'departments', 'positions'));
 })->name('employees.edit')->middleware('role:hr');
 
-Route::put('/employees/{employee}', function (Request $request, \App\Models\Employee $employee) {
+Route::put('/employees/{employee}', function (Request $request, Employee $employee) {
     $data = $request->validate([
         'full_name' => 'required|string|max:255',
-        'email' => 'nullable|email|unique:employees,email,' . $employee->id . '|unique:users,email,' . ($employee->user_id ?? 0),
+        'email' => 'nullable|email|unique:employees,email,'.$employee->id.'|unique:users,email,'.($employee->user_id ?? 0),
         'phone' => 'nullable|string|max:20',
         'gender' => 'nullable|in:laki-laki,perempuan',
         'birth_date' => 'nullable|date',
@@ -291,20 +382,22 @@ Route::put('/employees/{employee}', function (Request $request, \App\Models\Empl
         'employment_status' => 'required|in:aktif,kontrak,magang,resign,cuti',
     ]);
 
-    if (!empty($data['position_id'])) {
-        $position = \App\Models\Position::find($data['position_id']);
+    if (! empty($data['position_id'])) {
+        $position = Position::find($data['position_id']);
         if ($position && $position->department_id != ($data['department_id'] ?? null)) {
             return back()->withErrors(['position_id' => 'Jabatan tidak sesuai dengan departemen yang dipilih.'])->withInput();
         }
     }
 
     DB::transaction(function () use ($employee, $data) {
+        $department = isset($data['department_id']) ? Department::find($data['department_id']) : null;
         $employee->update($data);
-        if ($employee->user) {
+        if ($employee->user && $employee->user->role !== 'hr') {
             $userUpdate = ['name' => $data['full_name']];
-            if (!empty($data['email'])) {
+            if (! empty($data['email'])) {
                 $userUpdate['email'] = $data['email'];
             }
+            $userUpdate['role'] = $department?->isFinanceDepartment() ? 'finance' : 'karyawan';
             $employee->user->update($userUpdate);
         }
     });
@@ -312,7 +405,7 @@ Route::put('/employees/{employee}', function (Request $request, \App\Models\Empl
     return redirect()->route('employees.index')->with('success', 'Data pegawai berhasil diperbarui.');
 })->name('employees.update')->middleware('role:hr');
 
-Route::delete('/employees/{employee}', function (\App\Models\Employee $employee) {
+Route::delete('/employees/{employee}', function (Employee $employee) {
     DB::transaction(function () use ($employee) {
         $user = $employee->user;
         $name = $employee->full_name;
@@ -325,18 +418,18 @@ Route::delete('/employees/{employee}', function (\App\Models\Employee $employee)
     return redirect()->route('employees.index')->with('success', "Data pegawai {$employee->full_name} berhasil dihapus.");
 })->name('employees.destroy')->middleware('role:hr');
 
-Route::post('/employees/{employee}/reset-password', function (\App\Models\Employee $employee) {
-    $default = \App\Models\Employee::DEFAULT_PASSWORD;
+Route::post('/employees/{employee}/reset-password', function (Employee $employee) {
+    $default = Employee::DEFAULT_PASSWORD;
 
     if ($employee->user) {
         $employee->user->update(['password' => Hash::make($default)]);
         $message = "Password {$employee->full_name} direset ke: {$default}";
     } else {
-        $user = \App\Models\User::create([
+        $user = User::create([
             'name' => $employee->full_name,
-            'email' => $employee->email ?? strtolower($employee->employee_code) . '@talenta.local',
+            'email' => $employee->email ?? strtolower($employee->employee_code).'@talenta.local',
             'password' => Hash::make($default),
-            'role' => 'karyawan',
+            'role' => $employee->department?->isFinanceDepartment() ? 'finance' : 'karyawan',
         ]);
         $employee->update(['user_id' => $user->id]);
         $message = "Akun {$employee->full_name} dibuat. Login pakai NIK {$employee->employee_code}, password: {$default}";
@@ -372,67 +465,45 @@ Route::post('/leaves/{leave}/reject', [LeaveController::class, 'reject'])
     ->middleware('role:hr');
 
 // ========== LAPORAN ==========
-Route::get('/reports', function (Request $request) {
-    $period = $request->input('period', now()->format('Y-m'));
+Route::get('/reports', [ReportController::class, 'index'])
+    ->name('reports.index')
+    ->middleware('role:hr');
 
-    $employees = \App\Models\Employee::active()
-        ->with('department')
-        ->orderBy('employee_code')
-        ->get();
+Route::get('/reports/export/excel', [ReportController::class, 'exportExcel'])
+    ->name('reports.export.excel')
+    ->middleware('role:hr');
 
-    $rekap = $employees->map(function ($e) {
-        $hadir = 18 + ($e->id % 4);
-        $terlambat = $e->id % 4;
-        $izin = $e->id % 3;
-        $alpha = $e->id % 5 === 0 ? 1 : 0;
-        $total = $hadir + $terlambat + $izin + $alpha;
-
-        return [
-            'name' => $e->full_name,
-            'code' => $e->employee_code,
-            'dept' => $e->department->name ?? 'Tanpa Departemen',
-            'hadir' => $hadir,
-            'terlambat' => $terlambat,
-            'izin' => $izin,
-            'alpha' => $alpha,
-            'persen' => round(($hadir + $terlambat) / $total * 100),
-        ];
-    });
-
-    $perDepartemen = $rekap->groupBy('dept')
-        ->map(fn ($rows, $name) => ['name' => $name, 'percent' => round($rows->avg('persen'))])
-        ->sortByDesc('percent')
-        ->values();
-
-    $stats = [
-        'total_pegawai' => $employees->count(),
-        'rata_kehadiran' => $rekap->count() ? round($rekap->avg('persen')) : 0,
-        'total_terlambat' => $rekap->sum('terlambat'),
-        'cuti_disetujui' => \App\Models\Leave::where('status', 'approved')->count(),
-    ];
-
-    return view('admin.reports.index', compact('period', 'stats', 'perDepartemen', 'rekap'));
-})->name('reports.index')->middleware('role:hr');
+Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])
+    ->name('reports.export.pdf')
+    ->middleware('role:hr');
 
 // ========== ABSENSI ==========
 Route::get('/attendances', function (Request $request) {
     $date = $request->input('date', today()->toDateString());
     $departmentId = $request->input('department_id');
+    $request->validate([
+        'search' => ['nullable', 'string', 'max:100'],
+    ]);
+    $search = trim((string) $request->input('search', ''));
 
-    $attendances = \App\Models\Attendance::with('employee.department')
+    $attendances = Attendance::with('employee.department')
         ->whereDate('date', $date)
         ->when($departmentId, fn ($q) => $q->whereHas('employee', fn ($e) => $e->where('department_id', $departmentId)))
+        ->when($search !== '', fn ($q) => $q->whereHas('employee', fn ($e) => $e->where(fn ($terms) => $terms
+            ->where('full_name', 'like', "%{$search}%")
+            ->orWhere('employee_code', 'like', "%{$search}%")
+            ->orWhere('nik', 'like', "%{$search}%"))))
         ->latest('check_in')
         ->get();
 
     $summary = [
-        'hadir'     => $attendances->where('status', 'hadir')->count(),
+        'hadir' => $attendances->where('status', 'hadir')->count(),
         'terlambat' => $attendances->where('status', 'terlambat')->count(),
-        'izin'      => $attendances->whereIn('status', ['izin', 'cuti', 'sakit'])->count(),
-        'alpha'     => $attendances->where('status', 'alpha')->count(),
+        'izin' => $attendances->whereIn('status', ['izin', 'cuti', 'sakit'])->count(),
+        'alpha' => $attendances->where('status', 'alpha')->count(),
     ];
 
-    $departments = \App\Models\Department::where('is_active', true)->get();
+    $departments = Department::where('is_active', true)->get();
 
-    return view('admin.attendances.index', compact('attendances', 'summary', 'departments', 'date', 'departmentId'));
+    return view('admin.attendances.index', compact('attendances', 'summary', 'departments', 'date', 'departmentId', 'search'));
 })->name('attendances.index')->middleware('role:hr');

@@ -228,7 +228,6 @@ class TicketController extends Controller
             'priority' => 'required|in:rendah,sedang,tinggi,darurat',
             'description' => 'required|string|min:10',
             'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'is_anonymous' => 'nullable|boolean',
         ], [
             'title.required' => 'Subjek atau judul tiket wajib diisi.',
             'category.required' => 'Pilih kategori pengaduan / bantuan.',
@@ -250,7 +249,7 @@ class TicketController extends Controller
             'priority' => $validated['priority'],
             'description' => $validated['description'],
             'attachment' => $attachmentPath,
-            'is_anonymous' => $request->boolean('is_anonymous'),
+            'is_anonymous' => false,
             'status' => 'open',
         ]);
 

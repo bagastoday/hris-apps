@@ -52,62 +52,62 @@
 
     {{-- Top Navigation Bar --}}
     <nav class="bg-white border-b border-slate-200 sticky top-0 z-30 no-print shadow-sm">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
             
             {{-- Brand Logo & Title --}}
-            <div class="flex items-center gap-6">
-                <a href="{{ route('karyawan.home') }}" class="flex items-center gap-3 group">
-                    <div class="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center text-white shadow-md shadow-brand-600/30 group-hover:scale-105 transition-transform">
+            <div class="flex items-center gap-3 lg:gap-6 shrink-0">
+                <a href="{{ route('karyawan.home') }}" class="flex items-center gap-2.5 group shrink-0">
+                    <div class="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center text-white shadow-md shadow-brand-600/30 group-hover:scale-105 transition-transform shrink-0">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                     </div>
-                    <div>
-                        <span class="font-bold text-base text-slate-900 tracking-tight leading-none">Talenta<span class="text-brand-600">Core</span></span>
-                        <span class="block text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Portal Pegawai</span>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-base text-slate-900 tracking-tight leading-none whitespace-nowrap">Talenta<span class="text-brand-600">Core</span></span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold text-slate-500 bg-slate-100 uppercase tracking-wider whitespace-nowrap">Portal Pegawai</span>
                     </div>
                 </a>
 
                 {{-- Desktop Navigation Tabs --}}
-                <div class="hidden md:flex items-center gap-1.5 ml-2">
+                <div class="hidden md:flex items-center gap-1 lg:gap-1.5 overflow-x-auto py-1">
                     <a href="{{ route('karyawan.home') }}"
-                       class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 {{ request()->routeIs('karyawan.home') || request()->routeIs('karyawan.attendance*') ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       class="px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 whitespace-nowrap shrink-0 {{ request()->routeIs('karyawan.home') || request()->routeIs('karyawan.attendance*') ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
-                        Presensi Realtime
+                        <span>Presensi Realtime</span>
                     </a>
 
                     <a href="{{ route('leaves.my') }}"
-                       class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 {{ request()->routeIs('leaves.*') ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       class="px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 whitespace-nowrap shrink-0 {{ request()->routeIs('leaves.*') ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                         </svg>
-                        Cuti & Izin
+                        <span>Cuti &amp; Izin</span>
                     </a>
 
                     <a href="{{ route('karyawan.payroll') }}"
-                       class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 {{ request()->routeIs('karyawan.payroll') ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       class="px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 whitespace-nowrap shrink-0 {{ request()->routeIs('karyawan.payroll') ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.12-3 2.5S10.343 13 12 13s3 1.12 3 2.5S13.657 18 12 18m0-10V6m0 2v10m0 0v2m9-8a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
-                        Slip Gaji
+                        <span>Slip Gaji</span>
                     </a>
 
                     <a href="{{ route('karyawan.announcements') }}"
-                       class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 {{ request()->routeIs('karyawan.announcements*') ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       class="px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 whitespace-nowrap shrink-0 {{ request()->routeIs('karyawan.announcements*') ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
                         </svg>
-                        Pengumuman
+                        <span>Pengumuman</span>
                     </a>
 
                     <a href="{{ route('karyawan.tickets') }}"
-                       class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 {{ request()->routeIs('karyawan.tickets*') ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       class="px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 whitespace-nowrap shrink-0 {{ request()->routeIs('karyawan.tickets*') ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
                         </svg>
-                        Pusat Bantuan
+                        <span>Pusat Bantuan</span>
                         @if($ticketUnreadCount > 0)
                             <span class="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700">{{ $ticketUnreadCount }} tiket baru</span>
                         @endif
@@ -116,14 +116,14 @@
             </div>
 
             {{-- Right Actions & Profile Menu --}}
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 sm:gap-3 shrink-0">
                 @if(auth()->user()?->isFinance())
-                    <a href="{{ route('finance.index') }}" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition border border-emerald-200/60">
+                    <a href="{{ route('finance.index') }}" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition border border-emerald-200/60 whitespace-nowrap shrink-0">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                         Dashboard Finance
                     </a>
                 @elseif(auth()->user()?->hasHrAdminAccess())
-                    <a href="{{ route('dashboard') }}" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition border border-slate-200">
+                    <a href="{{ route('dashboard') }}" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition border border-slate-200 whitespace-nowrap shrink-0">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                         Dashboard HR
                     </a>
@@ -235,7 +235,7 @@
     </nav>
 
     {{-- Main Container --}}
-    <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
 
         {{-- Alerts --}}
         @if(!request()->routeIs('karyawan.payroll'))

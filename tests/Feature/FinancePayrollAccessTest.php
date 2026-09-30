@@ -258,6 +258,45 @@ class FinancePayrollAccessTest extends TestCase
         $this->assertDatabaseMissing('payroll_runs', ['period' => '2025-02']);
     }
 
+    public function test_weekend_attendance_is_added_as_separate_payroll_overtime(): void
+    {
+        [$finance, $employee] = $this->createFinanceEmployee();
+        foreach ([
+            ['2025-02-08', '09:00:00', '17:00:00'],
+            ['2025-02-09', '09:00:00', '12:00:00'],
+            ['2025-02-10', '08:00:00', '17:00:00'],
+            ['2025-02-15', '09:00:00', null],
+        ] as [$date, $checkIn, $checkOut]) {
+            Attendance::create([
+                'employee_id' => $employee->id,
+                'date' => $date,
+                'check_in' => $checkIn,
+                'check_out' => $checkOut,
+                'status' => 'hadir',
+            ]);
+        }
+
+        $this->actingAs($finance)
+            ->post(route('finance.payroll.store'), ['period' => '2025-02'])
+            ->assertRedirect(route('finance.index', ['period' => '2025-02']));
+
+        $run = PayrollRun::where('period', '2025-02')->firstOrFail();
+        $item = $run->items()->where('employee_id', $employee->id)->firstOrFail();
+        $this->assertSame(2, $item->overtime_days);
+        $this->assertEquals(400000, $item->overtime_pay);
+        $this->assertEquals(401000, $item->net_pay);
+
+        $this->put(route('finance.payroll.items.update', [$run, $item]), [
+            'allowance' => 100,
+            'deduction' => 50,
+        ])->assertRedirect();
+        $this->assertDatabaseHas('payroll_items', [
+            'id' => $item->id,
+            'overtime_pay' => 400000,
+            'net_pay' => 401050,
+        ]);
+    }
+
     public function test_finance_can_record_reimbursements_and_export_cashflow_and_payroll(): void
     {
         [$finance, $employee] = $this->createFinanceEmployee();

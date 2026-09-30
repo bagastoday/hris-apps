@@ -159,7 +159,13 @@
                 </div>
 
                 <h3 class="text-base font-bold text-slate-900">Presensi Masuk</h3>
-                <p class="text-xs text-slate-400 mt-0.5">Ambil foto selfie sebelum jam 08:30 WIB</p>
+                <p class="text-xs text-slate-400 mt-0.5">
+                    @if($isScheduledWorkday)
+                        Jadwal masuk {{ $expectedStartTime }} WIB
+                    @else
+                        Hari libur. Presensi akhir pekan dicatat sebagai lembur.
+                    @endif
+                </p>
 
                 @if($todayAttendance && $todayAttendance->check_in)
                     <div class="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3">
@@ -221,7 +227,13 @@
                 </div>
 
                 <h3 class="text-base font-bold text-slate-900">Presensi Pulang</h3>
-                <p class="text-xs text-slate-400 mt-0.5">Ambil foto selfie saat jam pulang kerja (17:00 WIB)</p>
+                <p class="text-xs text-slate-400 mt-0.5">
+                    @if($isScheduledWorkday)
+                        Jadwal pulang {{ $expectedEndTime }} WIB
+                    @else
+                        Presensi masuk dan pulang lengkap dihitung sebagai lembur.
+                    @endif
+                </p>
 
                 @if($todayAttendance && $todayAttendance->check_out)
                     <div class="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3">

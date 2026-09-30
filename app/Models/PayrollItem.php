@@ -15,6 +15,8 @@ class PayrollItem extends Model
         'department_name',
         'base_salary',
         'allowance',
+        'overtime_days',
+        'overtime_pay',
         'deduction',
         'net_pay',
         'payment_status',

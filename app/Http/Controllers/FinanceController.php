@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\FinanceTransaction;
 use App\Models\PayrollItem;
@@ -284,9 +285,9 @@ class FinanceController extends Controller
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Payroll');
-        $sheet->mergeCells('A1:I1');
+        $sheet->mergeCells('A1:J1');
         $sheet->setCellValue('A1', 'Laporan Payroll '.$period);
-        $sheet->fromArray(['Kode Pegawai', 'Nama Pegawai', 'Departemen', 'Gaji Pokok', 'Tunjangan', 'Potongan', 'Take Home Pay', 'Status', 'Tanggal Dibayar'], null, 'A3');
+        $sheet->fromArray(['Kode Pegawai', 'Nama Pegawai', 'Departemen', 'Gaji Pokok', 'Tunjangan', 'Hari Lembur', 'Upah Lembur', 'Potongan', 'Take Home Pay', 'Status', 'Tanggal Dibayar'], null, 'A3');
 
         foreach ($payroll?->items ?? [] as $index => $item) {
             $this->writeSpreadsheetRow($sheet, [
@@ -295,14 +296,16 @@ class FinanceController extends Controller
                 $item->department_name ?? '-',
                 (float) $item->base_salary,
                 (float) $item->allowance,
+                (int) $item->overtime_days,
+                (float) $item->overtime_pay,
                 (float) $item->deduction,
                 (float) $item->net_pay,
                 $item->payment_status === 'paid' ? 'Dibayar' : 'Belum dibayar',
                 $item->paid_at?->format('Y-m-d') ?? '-',
-            ], $index + 4, [3, 4, 5, 6]);
+            ], $index + 4, [3, 4, 6, 7, 8]);
         }
 
-        return $this->downloadSpreadsheet($spreadsheet, "payroll-{$period}.xlsx", 'A3:I'.max(3, ($payroll?->items->count() ?? 0) + 3));
+        return $this->downloadSpreadsheet($spreadsheet, "payroll-{$period}.xlsx", 'A3:K'.max(3, ($payroll?->items->count() ?? 0) + 3));
     }
 
     private function writeSpreadsheetRow($sheet, array $values, int $row, array $numericColumns): void
@@ -382,7 +385,18 @@ class FinanceController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($employees, $validated) {
+        $periodStart = Carbon::createFromFormat('!Y-m', $validated['period'])->startOfMonth();
+        $periodEnd = $periodStart->copy()->endOfMonth();
+        $overtimeByEmployee = Attendance::query()
+            ->whereIn('employee_id', $employees->pluck('id'))
+            ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
+            ->whereNotNull('check_in')
+            ->whereNotNull('check_out')
+            ->get(['employee_id', 'date'])
+            ->filter(fn (Attendance $attendance) => Carbon::parse($attendance->getRawOriginal('date'))->isWeekend())
+            ->groupBy('employee_id');
+
+        DB::transaction(function () use ($employees, $validated, $overtimeByEmployee) {
             $payroll = PayrollRun::create([
                 'period' => $validated['period'],
                 'status' => 'draft',
@@ -390,19 +404,24 @@ class FinanceController extends Controller
             ]);
 
             foreach ($employees as $employee) {
+                $overtimeDays = $overtimeByEmployee->get($employee->id, collect())->count();
+                $overtimePay = $overtimeDays * 200000;
+
                 $payroll->items()->create([
                     'employee_id' => $employee->id,
                     'employee_code' => $employee->employee_code,
                     'employee_name' => $employee->full_name,
                     'department_name' => $employee->department?->name,
                     'base_salary' => $employee->base_salary,
-                    'net_pay' => $employee->base_salary,
+                    'overtime_days' => $overtimeDays,
+                    'overtime_pay' => $overtimePay,
+                    'net_pay' => (int) $employee->base_salary + $overtimePay,
                 ]);
             }
         });
 
         return redirect()->route('finance.index', ['period' => $validated['period']])
-            ->with('success', 'Draft payroll berhasil dibuat. Periksa tunjangan dan potongan sebelum memprosesnya.');
+            ->with('success', 'Draft payroll berhasil dibuat. Lembur akhir pekan yang memiliki absen masuk dan pulang sudah ditambahkan otomatis.');
     }
 
     public function updateItem(Request $request, PayrollRun $payroll, PayrollItem $item): RedirectResponse
@@ -415,7 +434,7 @@ class FinanceController extends Controller
             'deduction' => ['required', 'integer', 'min:0', 'max:9999999999999'],
         ]);
 
-        $grossPay = (int) $item->base_salary + $validated['allowance'];
+        $grossPay = (int) $item->base_salary + (int) $item->overtime_pay + $validated['allowance'];
         if ($grossPay > 9999999999999) {
             throw ValidationException::withMessages([
                 'allowance' => 'Gaji pokok dan tunjangan melebihi batas nilai yang didukung.',

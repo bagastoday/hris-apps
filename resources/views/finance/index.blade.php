@@ -89,6 +89,7 @@
                         <th class="px-4 py-3">Pegawai</th>
                         <th class="px-4 py-3 text-right">Gaji Pokok</th>
                         <th class="px-4 py-3 text-right">Tunjangan</th>
+                        <th class="px-4 py-3 text-right">Lembur</th>
                         <th class="px-4 py-3 text-right">Potongan</th>
                         <th class="px-4 py-3 text-right">Take Home Pay</th>
                         <th class="px-4 py-3 text-center">Pembayaran</th>
@@ -114,12 +115,19 @@
                                     <input form="payroll-item-{{ $item->id }}" type="number" name="allowance" min="0" step="1" value="{{ (int) $item->allowance }}" required
                                            class="w-32 rounded-lg border-slate-200 text-right text-sm focus:border-brand-500 focus:ring-brand-500">
                                 </td>
+                            @else
+                                <td class="px-4 py-4 text-right whitespace-nowrap">Rp {{ number_format((float) $item->allowance, 0, ',', '.') }}</td>
+                            @endif
+                            <td class="px-4 py-4 text-right whitespace-nowrap">
+                                <span class="font-medium">Rp {{ number_format((float) $item->overtime_pay, 0, ',', '.') }}</span>
+                                <span class="block text-xs text-slate-400">{{ $item->overtime_days }} hari</span>
+                            </td>
+                            @if($payroll->status === 'draft')
                                 <td class="px-2 py-3">
                                     <input form="payroll-item-{{ $item->id }}" type="number" name="deduction" min="0" step="1" value="{{ (int) $item->deduction }}" required
                                            class="w-32 rounded-lg border-slate-200 text-right text-sm focus:border-brand-500 focus:ring-brand-500">
                                 </td>
                             @else
-                                <td class="px-4 py-4 text-right whitespace-nowrap">Rp {{ number_format((float) $item->allowance, 0, ',', '.') }}</td>
                                 <td class="px-4 py-4 text-right whitespace-nowrap">Rp {{ number_format((float) $item->deduction, 0, ',', '.') }}</td>
                             @endif
                             <td class="px-4 py-4 text-right font-semibold text-slate-900 whitespace-nowrap">Rp {{ number_format((float) $item->net_pay, 0, ',', '.') }}</td>
@@ -142,7 +150,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="px-5 py-10 text-center text-slate-400">Belum ada rincian payroll.</td></tr>
+                        <tr><td colspan="8" class="px-5 py-10 text-center text-slate-400">Belum ada rincian payroll.</td></tr>
                     @endforelse
                 </tbody>
             </table>

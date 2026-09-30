@@ -111,18 +111,6 @@
                 @enderror
             </div>
 
-            {{-- Opsi Anonim / Rahasia --}}
-            <div id="anonymous-option" class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3">
-                <input type="checkbox" id="is_anonymous" name="is_anonymous" value="1" {{ old('is_anonymous') ? 'checked' : '' }}
-                       class="mt-1 w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500">
-                <label for="is_anonymous" class="text-xs text-slate-700 cursor-pointer">
-                    <span class="font-bold text-slate-900 block">Kirim Sebagai Pengaduan Rahasia (Whistleblowing)</span>
-                    <span class="text-slate-500 text-[11px] block mt-0.5">
-                        Nama kamu akan disamarkan sebagai "Anonim" di rekap umum laporan. Fitur ini dirancang untuk menjaga kenyamanan dan perlindungan pelapor.
-                    </span>
-                </label>
-            </div>
-
             {{-- Action Buttons --}}
             <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
                 <a href="{{ route('karyawan.tickets') }}"
@@ -148,7 +136,6 @@
     const attachmentInput = document.getElementById('ticket-attachment');
     const attachmentLabel = document.getElementById('attachment-label');
     const attachmentHelp = document.getElementById('attachment-help');
-    const anonymousOption = document.getElementById('anonymous-option');
     const descriptionLabel = document.getElementById('description-label');
     const ticketDescription = document.getElementById('ticket-description');
 
@@ -157,7 +144,6 @@
         reimbursementField.classList.toggle('hidden', !isReimbursement);
         reimbursementAmount.required = isReimbursement;
         priorityField.classList.toggle('hidden', isReimbursement);
-        anonymousOption.classList.toggle('hidden', isReimbursement);
         attachmentInput.required = isReimbursement;
         attachmentInput.accept = isReimbursement ? '.jpg,.jpeg,.png' : '.pdf,.jpg,.jpeg,.png';
         attachmentLabel.textContent = isReimbursement ? 'Foto Bukti Reimbursement (Wajib)' : 'Lampiran Foto / Dokumen Pendukung (Opsional)';

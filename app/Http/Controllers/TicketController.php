@@ -8,6 +8,7 @@ use App\Models\ActivityLog;
 use App\Models\Ticket;
 use App\Models\TicketReply;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -108,9 +109,9 @@ class TicketController extends Controller
         }
 
         if ($validated['status'] === 'resolved' && !$ticket->resolved_at) {
-            $ticket->resolved_at = now();
+            $ticket->resolved_at = Carbon::now();
         } elseif ($validated['status'] === 'closed' && !$ticket->closed_at) {
-            $ticket->closed_at = now();
+            $ticket->closed_at = Carbon::now();
         }
 
         if (!$ticket->assigned_to) {
@@ -161,7 +162,7 @@ class TicketController extends Controller
         if (!empty($validated['change_status'])) {
             $ticket->status = $validated['change_status'];
             if ($validated['change_status'] === 'resolved' && !$ticket->resolved_at) {
-                $ticket->resolved_at = now();
+                $ticket->resolved_at = Carbon::now();
             }
         } elseif ($ticket->status === 'open') {
             $ticket->status = 'in_progress';
@@ -276,7 +277,7 @@ class TicketController extends Controller
             'priority' => $validated['priority'],
             'description' => $validated['description'],
             'attachment' => $attachmentPath,
-            'is_anonymous' => $validated['category'] === 'reimburse' ? false : $request->boolean('is_anonymous'),
+            'is_anonymous' => false,
             'reimbursement_amount' => $validated['reimbursement_amount'] ?? null,
             'reimbursement_status' => $validated['category'] === 'reimburse' ? 'pending' : null,
             'status' => 'open',

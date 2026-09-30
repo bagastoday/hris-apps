@@ -57,6 +57,11 @@ class TicketHelpdeskTest extends TestCase
     {
         $karyawan = $this->createKaryawanUser();
 
+        $this->actingAs($karyawan)
+            ->get(route('karyawan.tickets.create'))
+            ->assertOk()
+            ->assertSee('Formulir Tiket Bantuan');
+
         $response = $this->actingAs($karyawan)->post(route('karyawan.tickets.store'), [
             'title' => 'AC Ruang Meeting Tidak Dingin',
             'category' => 'fasilitas',
@@ -229,24 +234,24 @@ class TicketHelpdeskTest extends TestCase
     }
 
     /**
-     * Karyawan dapat membuat pengaduan secara anonim (whistleblowing).
+     * Fitur kirim tiket anonim telah ditiadakan sehingga tiket selalu tercatat atas nama pelapor asli.
      */
-    public function test_karyawan_can_create_anonymous_ticket()
+    public function test_karyawan_cannot_create_anonymous_ticket()
     {
         $karyawan = $this->createKaryawanUser();
 
         $this->actingAs($karyawan)->post(route('karyawan.tickets.store'), [
-            'title' => 'Laporan Pelanggaran SOP Pengadaan',
+            'title' => 'Laporan Kendala Fasilitas',
             'category' => 'pengaduan',
             'priority' => 'tinggi',
-            'description' => 'Terdapat indikasi markup harga perlengkapan kantor yang tidak sesuai standar.',
+            'description' => 'Terdapat kendala fasilitas pendingin ruangan yang perlu diperbaiki segera.',
             'is_anonymous' => 1,
         ]);
 
-        $ticket = Ticket::where('title', 'Laporan Pelanggaran SOP Pengadaan')->first();
+        $ticket = Ticket::where('title', 'Laporan Kendala Fasilitas')->first();
         $this->assertNotNull($ticket);
-        $this->assertTrue((bool) $ticket->is_anonymous);
-        $this->assertEquals('Anonim (Pengaduan Rahasia)', $ticket->display_author);
+        $this->assertFalse((bool) $ticket->is_anonymous);
+        $this->assertEquals($karyawan->name, $ticket->display_author);
     }
 
     /**

@@ -17,9 +17,9 @@ jobs:
           message: |
             🚀 *Notifikasi Push Baru di HRIS Apps*
 
-            👤 *Author:* ${{ github.actor }}
-            🌿 *Branch:* `${{ github.ref_name }}`
-            📝 *Commit Message:* 
+             *Author:* ${{ github.actor }}
+             *Branch:* `${{ github.ref_name }}`
+             *Commit Message:* 
             "${{ github.event.head_commit.message }}"
 
             🔗 [Lihat Perubahan di GitHub](${{ github.event.head_commit.url }})

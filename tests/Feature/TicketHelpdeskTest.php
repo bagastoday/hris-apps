@@ -7,6 +7,7 @@ namespace Tests\Feature;
 use App\Models\ActivityLog;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\FinanceTransaction;
 use App\Models\Leave;
 use App\Models\PayrollItem;
 use App\Models\PayrollRun;
@@ -15,6 +16,8 @@ use App\Models\Ticket;
 use App\Models\TicketReply;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class TicketHelpdeskTest extends TestCase
@@ -79,19 +82,150 @@ class TicketHelpdeskTest extends TestCase
     public function test_karyawan_can_create_finance_ticket()
     {
         $karyawan = $this->createKaryawanUser();
+        Storage::fake('public');
+        Storage::fake('local');
 
         $response = $this->actingAs($karyawan)->post(route('karyawan.tickets.store'), [
             'title' => 'Pengajuan Reimburse',
             'category' => 'reimburse',
             'priority' => 'sedang',
             'description' => 'Mohon diproses penggantian biaya perjalanan dinas.',
+            'reimbursement_amount' => 150000,
+            'attachment' => UploadedFile::fake()->image('bukti-bensin.jpg'),
         ]);
 
         $ticket = Ticket::where('title', 'Pengajuan Reimburse')->firstOrFail();
 
         $this->assertSame('finance', $ticket->assigned_team);
+        $this->assertSame('pending', $ticket->reimbursement_status);
+        $this->assertSame('150000.00', $ticket->reimbursement_amount);
+        $this->assertNotNull($ticket->attachment);
         $response->assertRedirect(route('karyawan.tickets.show', $ticket));
         $response->assertSessionHas('success', "Tiket kamu berhasil dibuat dengan nomor referensi #{$ticket->ticket_code} dan diteruskan ke tim Finance.");
+    }
+
+    public function test_finance_approval_posts_pending_expense_without_changing_ticket_status(): void
+    {
+        $karyawan = $this->createKaryawanUser();
+        Storage::fake('public');
+        Storage::fake('local');
+        $this->actingAs($karyawan)->post(route('karyawan.tickets.store'), [
+            'title' => 'Reimburse bensin cabang',
+            'category' => 'reimburse',
+            'priority' => 'sedang',
+            'description' => 'Penggantian bensin untuk perjalanan kerja ke kantor cabang.',
+            'reimbursement_amount' => 185000,
+            'attachment' => UploadedFile::fake()->image('bukti-bensin.png'),
+        ])->assertRedirect();
+        $ticket = Ticket::where('title', 'Reimburse bensin cabang')->firstOrFail();
+        $finance = User::factory()->create(['role' => 'finance']);
+
+        $this->actingAs($finance)
+            ->get(route('finance.reimbursements'))
+            ->assertOk()
+            ->assertSee('Reimburse bensin cabang')
+            ->assertSee('185.000');
+
+        $this->post(route('finance.reimbursements.decision', $ticket), [
+            'decision' => 'approved',
+        ])->assertRedirect(route('finance.reimbursements', ['status' => 'approved']));
+
+        $transaction = FinanceTransaction::where('category', 'reimbursement')->firstOrFail();
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'reimbursement_status' => 'approved',
+            'finance_transaction_id' => $transaction->id,
+            'status' => 'open',
+        ]);
+        $this->assertDatabaseHas('finance_transactions', [
+            'id' => $transaction->id,
+            'type' => 'expense',
+            'status' => 'pending',
+            'employee_id' => $karyawan->employee->id,
+            'amount' => 185000,
+        ]);
+        Storage::disk('local')->assertExists($ticket->attachment);
+        $this->actingAs($karyawan)->get(route('tickets.reimbursements.proof', $ticket))
+            ->assertOk()
+            ->assertHeader('content-disposition', 'inline');
+        $this->actingAs($finance)->get(route('tickets.reimbursements.proof', $ticket))->assertOk();
+        $this->actingAs($this->createKaryawanUser('Karyawan Lain'))
+            ->get(route('tickets.reimbursements.proof', $ticket))
+            ->assertForbidden();
+
+        $this->actingAs($finance);
+        $this->post(route('tickets.update-status', $ticket), [
+            'status' => 'closed',
+            'priority' => 'sedang',
+        ])->assertRedirect();
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'status' => 'closed',
+            'reimbursement_status' => 'approved',
+        ]);
+
+        $transactionPeriod = \Carbon\Carbon::parse($transaction->fresh()->transaction_date)->format('Y-m');
+        $this->get(route('finance.transactions', ['period' => $transactionPeriod]))
+            ->assertOk()
+            ->assertViewHas('period', $transactionPeriod)
+            ->assertViewHas('transactions', fn ($transactions) => $transactions->contains('id', $transaction->id))
+            ->assertSee('Reimburse bensin cabang')
+            ->assertSee('Belum dibayar');
+    }
+
+    public function test_rejected_reimbursement_requires_a_reason_and_does_not_create_cash_transaction(): void
+    {
+        $karyawan = $this->createKaryawanUser();
+        Storage::fake('public');
+        Storage::fake('local');
+        $this->actingAs($karyawan)->post(route('karyawan.tickets.store'), [
+            'title' => 'Reimburse parkir kantor cabang',
+            'category' => 'reimburse',
+            'priority' => 'sedang',
+            'description' => 'Penggantian biaya parkir saat bertugas ke kantor cabang.',
+            'reimbursement_amount' => 25000,
+            'attachment' => UploadedFile::fake()->image('bukti-parkir.jpg'),
+        ])->assertRedirect();
+        $ticket = Ticket::where('title', 'Reimburse parkir kantor cabang')->firstOrFail();
+        $finance = User::factory()->create(['role' => 'finance']);
+
+        $this->actingAs($finance)
+            ->from(route('finance.reimbursements'))
+            ->post(route('finance.reimbursements.decision', $ticket), ['decision' => 'rejected'])
+            ->assertRedirect(route('finance.reimbursements'))
+            ->assertSessionHasErrors('review_note');
+        $this->assertSame('pending', $ticket->fresh()->reimbursement_status);
+
+        $this->post(route('finance.reimbursements.decision', $ticket), [
+            'decision' => 'rejected',
+            'review_note' => 'Bukti tidak terbaca, mohon unggah ulang.',
+        ])->assertRedirect(route('finance.reimbursements', ['status' => 'rejected']));
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'reimbursement_status' => 'rejected',
+            'reimbursement_review_note' => 'Bukti tidak terbaca, mohon unggah ulang.',
+            'finance_transaction_id' => null,
+        ]);
+        $this->assertDatabaseCount('finance_transactions', 0);
+    }
+
+    public function test_reimbursement_ticket_requires_amount_and_image_proof(): void
+    {
+        $karyawan = $this->createKaryawanUser();
+
+        $this->actingAs($karyawan)
+            ->from(route('karyawan.tickets.create'))
+            ->post(route('karyawan.tickets.store'), [
+                'title' => 'Penggantian biaya bensin',
+                'category' => 'reimburse',
+                'priority' => 'sedang',
+                'description' => 'Pengeluaran bensin perjalanan dinas ke kantor cabang.',
+            ])
+            ->assertRedirect(route('karyawan.tickets.create'))
+            ->assertSessionHasErrors(['reimbursement_amount', 'attachment']);
+
+        $this->assertDatabaseMissing('tickets', ['title' => 'Penggantian biaya bensin']);
     }
 
     /**

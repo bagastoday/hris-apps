@@ -195,6 +195,13 @@ Route::post('/change-password', function (Request $request) {
 Route::middleware('role:finance')->prefix('finance')->name('finance.')->group(function () {
     Route::get('/', [FinanceController::class, 'index'])->name('index');
     Route::get('/salaries', [FinanceController::class, 'salaries'])->name('salaries');
+    Route::get('/reimbursements', [FinanceController::class, 'reimbursementApprovals'])->name('reimbursements');
+    Route::post('/reimbursements/{ticket}/decision', [FinanceController::class, 'decideReimbursement'])->name('reimbursements.decision');
+    Route::get('/transactions', [FinanceController::class, 'transactions'])->name('transactions');
+    Route::post('/transactions', [FinanceController::class, 'storeTransaction'])->name('transactions.store');
+    Route::post('/transactions/{transaction}/paid', [FinanceController::class, 'markTransactionPaid'])->name('transactions.paid');
+    Route::get('/exports/cashflow', [FinanceController::class, 'exportCashflow'])->name('exports.cashflow');
+    Route::get('/exports/payroll', [FinanceController::class, 'exportPayroll'])->name('exports.payroll');
     Route::put('/employees/{employee}/salary', [FinanceController::class, 'updateSalary'])->name('salary.update');
     Route::post('/payroll', [FinanceController::class, 'createPayroll'])->name('payroll.store');
     Route::put('/payroll/{payroll}/items/{item}', [FinanceController::class, 'updateItem'])->name('payroll.items.update');
@@ -323,6 +330,10 @@ Route::post('/karyawan/tickets/{ticket}/reply', [TicketController::class, 'karya
     ->name('karyawan.tickets.reply')
     ->middleware('role:karyawan,hr,finance');
 
+Route::get('/tickets/{ticket}/reimbursement-proof', [TicketController::class, 'reimbursementProof'])
+    ->name('tickets.reimbursements.proof')
+    ->middleware('role:karyawan,finance');
+
 // ========== PEGAWAI (HR only) ==========
 Route::get('/employees', function (Request $request) {
     $filters = $request->validate([
@@ -332,7 +343,7 @@ Route::get('/employees', function (Request $request) {
     $search = trim($filters['search'] ?? '');
     $departmentId = $filters['department_id'] ?? '';
 
-    $employees = Employee::with(['department', 'position'])
+    $employees = Employee::with(['department', 'position', 'user'])
         ->when($departmentId !== '', fn ($query) => $query->where('department_id', $departmentId))
         ->when($search !== '', fn ($query) => $query->where(fn ($terms) => $terms
             ->where('full_name', 'like', "%{$search}%")

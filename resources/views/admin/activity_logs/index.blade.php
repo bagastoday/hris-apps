@@ -138,6 +138,13 @@
                                 'karyawan' => 'bg-emerald-50 text-emerald-700',
                                 default => 'bg-slate-100 text-slate-600'
                             };
+                            $roleLabel = $log->user_title ?: match($log->user_role) {
+                                'hr' => 'HR Admin',
+                                'finance' => 'Finance Admin',
+                                'karyawan' => 'Karyawan',
+                                'system' => 'Sistem',
+                                default => $log->user_role ?? 'Tidak diketahui'
+                            };
                         @endphp
                         <tr class="hover:bg-slate-50/50 transition">
                             <td class="px-5 py-4 whitespace-nowrap">
@@ -148,7 +155,7 @@
                                 <div class="flex items-center gap-2">
                                     <span class="font-semibold text-xs text-slate-900">{{ $log->user_name }}</span>
                                     <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $roleBadge }}">
-                                        {{ $log->user_role }}
+                                        {{ $roleLabel }}
                                     </span>
                                 </div>
                             </td>

@@ -38,7 +38,7 @@
 
             {{-- Kategori & Prioritas --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+                <div id="priority-field">
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">
                         Kategori Permasalahan <span class="text-red-500">*</span>
                     </label>
@@ -73,12 +73,24 @@
                 </div>
             </div>
 
+            <div id="reimbursement-amount-field" class="hidden">
+                <label class="block text-xs font-semibold text-slate-700 mb-1.5" for="reimbursement_amount">
+                    Nominal Reimbursement (Rp) <span class="text-red-500">*</span>
+                </label>
+                <input id="reimbursement_amount" type="number" name="reimbursement_amount" min="1" step="1" value="{{ old('reimbursement_amount') }}"
+                       placeholder="Contoh: 150000"
+                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 @error('reimbursement_amount') border-red-300 ring-1 ring-red-200 @enderror">
+                @error('reimbursement_amount')
+                    <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
             {{-- Deskripsi Kendala --}}
             <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Detail Kronologi & Deskripsi Kendala <span class="text-red-500">*</span>
+                    <label id="description-label" class="block text-xs font-semibold text-slate-700 mb-1.5">
+                        Detail Kronologi & Deskripsi Kendala <span class="text-red-500">*</span>
                 </label>
-                <textarea name="description" rows="5" required placeholder="Jelaskan secara rinci kendala yang dihadapi, waktu kejadian, dan nomor/kode yang relevan jika ada..."
+                    <textarea id="ticket-description" name="description" rows="5" required placeholder="Jelaskan secara rinci kendala yang dihadapi, waktu kejadian, dan nomor/kode yang relevan jika ada..."
                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 leading-relaxed @error('description') border-red-300 @enderror">{{ old('description') }}</textarea>
                 <p class="text-[10px] text-slate-400 mt-1">Minimal 10 karakter.</p>
                 @error('description')
@@ -87,20 +99,20 @@
             </div>
 
             {{-- Lampiran Berkas --}}
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1.5">
+            <div id="attachment-field">
+                <label id="attachment-label" class="block text-xs font-semibold text-slate-700 mb-1.5">
                     Lampiran Foto / Dokumen Pendukung (Opsional)
                 </label>
-                <input type="file" name="attachment" accept=".pdf,.jpg,.jpeg,.png"
+                <input id="ticket-attachment" type="file" name="attachment" accept=".pdf,.jpg,.jpeg,.png"
                        class="w-full text-xs text-slate-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200">
-                <p class="text-[10px] text-slate-400 mt-1">Format file yang didukung: JPG, PNG, atau PDF (Ukuran maksimal 5MB).</p>
+                <p id="attachment-help" class="text-[10px] text-slate-400 mt-1">Format file yang didukung: JPG, PNG, atau PDF (Ukuran maksimal 5MB).</p>
                 @error('attachment')
                     <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>
                 @enderror
             </div>
 
             {{-- Opsi Anonim / Rahasia --}}
-            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3">
+            <div id="anonymous-option" class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3">
                 <input type="checkbox" id="is_anonymous" name="is_anonymous" value="1" {{ old('is_anonymous') ? 'checked' : '' }}
                        class="mt-1 w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500">
                 <label for="is_anonymous" class="text-xs text-slate-700 cursor-pointer">
@@ -128,4 +140,39 @@
     </div>
 
 </div>
+<script>
+    const ticketCategory = document.querySelector('[name="category"]');
+    const reimbursementField = document.getElementById('reimbursement-amount-field');
+    const reimbursementAmount = document.getElementById('reimbursement_amount');
+    const priorityField = document.getElementById('priority-field');
+    const attachmentInput = document.getElementById('ticket-attachment');
+    const attachmentLabel = document.getElementById('attachment-label');
+    const attachmentHelp = document.getElementById('attachment-help');
+    const anonymousOption = document.getElementById('anonymous-option');
+    const descriptionLabel = document.getElementById('description-label');
+    const ticketDescription = document.getElementById('ticket-description');
+
+    function updateReimbursementFields() {
+        const isReimbursement = ticketCategory.value === 'reimburse';
+        reimbursementField.classList.toggle('hidden', !isReimbursement);
+        reimbursementAmount.required = isReimbursement;
+        priorityField.classList.toggle('hidden', isReimbursement);
+        anonymousOption.classList.toggle('hidden', isReimbursement);
+        attachmentInput.required = isReimbursement;
+        attachmentInput.accept = isReimbursement ? '.jpg,.jpeg,.png' : '.pdf,.jpg,.jpeg,.png';
+        attachmentLabel.textContent = isReimbursement ? 'Foto Bukti Reimbursement (Wajib)' : 'Lampiran Foto / Dokumen Pendukung (Opsional)';
+        attachmentHelp.textContent = isReimbursement
+            ? 'Lampirkan foto JPG atau PNG yang jelas, maksimal 5MB.'
+            : 'Format file yang didukung: JPG, PNG, atau PDF (Ukuran maksimal 5MB).';
+        descriptionLabel.innerHTML = isReimbursement
+            ? 'Deskripsi Pengeluaran <span class="text-red-500">*</span>'
+            : 'Detail Kronologi & Deskripsi Kendala <span class="text-red-500">*</span>';
+        ticketDescription.placeholder = isReimbursement
+            ? 'Jelaskan keperluan, tanggal, dan alasan pengeluaran yang diminta untuk diganti.'
+            : 'Jelaskan secara rinci kendala yang dihadapi, waktu kejadian, dan nomor/kode yang relevan jika ada...';
+    }
+
+    ticketCategory.addEventListener('change', updateReimbursementFields);
+    updateReimbursementFields();
+</script>
 @endsection

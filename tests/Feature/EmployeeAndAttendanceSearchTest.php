@@ -9,6 +9,8 @@ use App\Models\Position;
 use App\Models\User;
 use App\Support\EmployeeEmailGenerator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class EmployeeAndAttendanceSearchTest extends TestCase
@@ -176,6 +178,77 @@ class EmployeeAndAttendanceSearchTest extends TestCase
             ->assertSee('Siti Aminah')
             ->assertDontSee('Siti Finance')
             ->assertSee('Semua Departemen');
+    }
+
+    public function test_profile_photo_upload_shows_guidance_and_appears_in_hr_employee_list(): void
+    {
+        Storage::fake('public');
+        $department = Department::create([
+            'name' => 'Operations',
+            'code' => 'OPS',
+            'is_active' => true,
+        ]);
+        $user = User::create([
+            'name' => 'Foto Pegawai',
+            'email' => 'foto@example.com',
+            'password' => 'password',
+            'role' => 'karyawan',
+        ]);
+        Employee::create([
+            'user_id' => $user->id,
+            'employee_code' => 'EMP-101',
+            'full_name' => 'Foto Pegawai',
+            'nik' => 'NIK-101',
+            'join_date' => today()->toDateString(),
+            'department_id' => $department->id,
+            'employment_status' => 'aktif',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('profile.edit'))
+            ->assertOk()
+            ->assertSee('Panduan Foto Profil')
+            ->assertSee('latar belakang putih')
+            ->assertSee('Hadap kamera')
+            ->assertSee('pakaian formal');
+
+        $this->put(route('profile.update'), [
+            'name' => 'Foto Pegawai',
+            'avatar' => UploadedFile::fake()->image('profil.png'),
+        ])->assertRedirect();
+
+        $avatarPath = $user->fresh()->avatar;
+        $this->assertNotNull($avatarPath);
+        Storage::disk('public')->assertExists($avatarPath);
+
+        $this->actingAs($this->createHrUser())
+            ->get(route('employees.index'))
+            ->assertOk()
+            ->assertSee(asset('storage/' . $avatarPath), false)
+            ->assertSee('Foto profil Foto Pegawai', false);
+    }
+
+    public function test_hr_employee_list_keeps_initials_for_employees_without_profile_photo(): void
+    {
+        $department = Department::create([
+            'name' => 'Operations',
+            'code' => 'OPS',
+            'is_active' => true,
+        ]);
+        Employee::create([
+            'employee_code' => 'EMP-102',
+            'full_name' => 'Tanpa Foto',
+            'nik' => 'NIK-102',
+            'join_date' => today()->toDateString(),
+            'department_id' => $department->id,
+            'employment_status' => 'aktif',
+        ]);
+
+        $this->actingAs($this->createHrUser())
+            ->get(route('employees.index'))
+            ->assertOk()
+            ->assertSee('Tanpa Foto')
+            ->assertSee('TA');
     }
 
     public function test_attendance_search_is_displayed_after_summary_and_before_table(): void

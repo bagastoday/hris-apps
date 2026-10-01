@@ -212,9 +212,10 @@ class EmployeeAndAttendanceSearchTest extends TestCase
             ->assertSee('Hadap kamera')
             ->assertSee('pakaian formal');
 
+        $pngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
         $this->put(route('profile.update'), [
             'name' => 'Foto Pegawai',
-            'avatar' => UploadedFile::fake()->image('profil.png'),
+            'avatar' => UploadedFile::fake()->createWithContent('profil.png', base64_decode($pngBase64)),
         ])->assertRedirect();
 
         $avatarPath = $user->fresh()->avatar;

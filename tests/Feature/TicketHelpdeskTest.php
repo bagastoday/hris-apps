@@ -84,6 +84,12 @@ class TicketHelpdeskTest extends TestCase
         ]);
     }
 
+    protected function fakeImage(string $name = 'test.jpg'): UploadedFile
+    {
+        $pngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+        return UploadedFile::fake()->createWithContent($name, base64_decode($pngBase64));
+    }
+
     public function test_karyawan_can_create_finance_ticket()
     {
         $karyawan = $this->createKaryawanUser();
@@ -96,7 +102,7 @@ class TicketHelpdeskTest extends TestCase
             'priority' => 'sedang',
             'description' => 'Mohon diproses penggantian biaya perjalanan dinas.',
             'reimbursement_amount' => 150000,
-            'attachment' => UploadedFile::fake()->image('bukti-bensin.jpg'),
+            'attachment' => $this->fakeImage('bukti-bensin.jpg'),
         ]);
 
         $ticket = Ticket::where('title', 'Pengajuan Reimburse')->firstOrFail();
@@ -120,7 +126,7 @@ class TicketHelpdeskTest extends TestCase
             'priority' => 'sedang',
             'description' => 'Penggantian bensin untuk perjalanan kerja ke kantor cabang.',
             'reimbursement_amount' => 185000,
-            'attachment' => UploadedFile::fake()->image('bukti-bensin.png'),
+            'attachment' => $this->fakeImage('bukti-bensin.png'),
         ])->assertRedirect();
         $ticket = Ticket::where('title', 'Reimburse bensin cabang')->firstOrFail();
         $finance = User::factory()->create(['role' => 'finance']);
@@ -130,6 +136,8 @@ class TicketHelpdeskTest extends TestCase
             ->assertOk()
             ->assertSee('Reimburse bensin cabang')
             ->assertSee('185.000');
+
+            #make a route for post and get database
 
         $this->post(route('finance.reimbursements.decision', $ticket), [
             'decision' => 'approved',
@@ -189,7 +197,7 @@ class TicketHelpdeskTest extends TestCase
             'priority' => 'sedang',
             'description' => 'Penggantian biaya parkir saat bertugas ke kantor cabang.',
             'reimbursement_amount' => 25000,
-            'attachment' => UploadedFile::fake()->image('bukti-parkir.jpg'),
+            'attachment' => $this->fakeImage('bukti-parkir.jpg'),
         ])->assertRedirect();
         $ticket = Ticket::where('title', 'Reimburse parkir kantor cabang')->firstOrFail();
         $finance = User::factory()->create(['role' => 'finance']);

@@ -448,6 +448,12 @@
                     {{-- Image preview after snapshot --}}
                     <img id="photoPreview" :src="photoData" class="w-full h-full object-cover" x-show="photoTaken" alt="Hasil Foto">
 
+                    {{-- Oval guide frame for face alignment --}}
+                    <div class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center" x-show="!photoTaken">
+                        <div class="w-40 h-52 sm:w-48 sm:h-60 rounded-[50%] border-2 border-dashed border-white/60 shadow-[0_0_0_9999px_rgba(15,23,42,0.35)]"></div>
+                        <span class="text-[10px] text-white/90 bg-black/50 px-2.5 py-0.5 rounded-full mt-2 backdrop-blur-xs font-medium">Posisikan wajah di dalam bingkai</span>
+                    </div>
+
                     {{-- Realtime stamp watermark on video/photo --}}
                     <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between px-3 py-1.5 rounded-lg bg-black/60 text-white backdrop-blur-sm text-[11px] font-mono pointer-events-none">
                         <span id="cam-user-name">{{ $employee->full_name ?? auth()->user()?->name ?? 'Pegawai' }}</span>

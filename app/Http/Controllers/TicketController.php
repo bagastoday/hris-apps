@@ -248,7 +248,6 @@ class TicketController extends Controller
                 'max:9999999999999',
             ],
             'attachment' => $attachmentRules,
-            'is_anonymous' => 'nullable|boolean',
         ], [
             'title.required' => 'Subjek atau judul tiket wajib diisi.',
             'category.required' => 'Pilih kategori pengaduan / bantuan.',

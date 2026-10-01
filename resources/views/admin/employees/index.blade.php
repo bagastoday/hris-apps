@@ -108,7 +108,7 @@
                                         <svg class="h-3.5 w-3.5 transition-transform group-hover:-rotate-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m16.862 4.487 2.651 2.651M8 16l8.5-8.5a2.121 2.121 0 0 1 3 3L11 19H8v-3Z"/></svg>
                                         Edit
                                     </a>
-                                    <form action="{{ route('employees.destroy', $emp) }}" method="POST" onsubmit="return confirm('Apakah kamu yakin ingin menghapus data pegawai {{ $emp->full_name }}? Data absensi dan cuti terkait juga akan terhapus.');" class="inline">
+                                    <form action="{{ route('employees.destroy', $emp) }}" method="POST" data-confirm="Apakah kamu yakin ingin menghapus data pegawai {{ $emp->full_name }}? Data absensi dan cuti terkait juga akan terhapus." data-confirm-btn="Ya, Hapus Data" data-confirm-title="Hapus Data Pegawai" class="inline">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="group inline-flex items-center gap-1.5 rounded-lg border border-rose-100 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-600 transition hover:border-rose-200 hover:bg-rose-100 hover:shadow-sm">

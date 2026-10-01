@@ -338,8 +338,64 @@
         </main>
     </div>
 </div>
-@if(!request()->is('tickets*'))
+
+{{-- Global Confirmation Modal --}}
+<div x-data="{
+    open: false,
+    title: 'Konfirmasi Tindakan',
+    message: '',
+    confirmText: 'Ya, Lanjutkan',
+    targetForm: null,
+    trigger(form, msg, btnText = 'Ya, Lanjutkan', titleText = 'Konfirmasi Tindakan') {
+        this.targetForm = form;
+        this.message = msg;
+        this.confirmText = btnText;
+        this.title = titleText;
+        this.open = true;
+    },
+    submit() {
+        if (this.targetForm) {
+            this.targetForm._confirmed = true;
+            this.targetForm.submit();
+        }
+        this.open = false;
+    }
+}"
+@open-confirm.window="trigger($event.detail.form, $event.detail.message, $event.detail.confirmText, $event.detail.title)"
+x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div @click.away="open = false" class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+        <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <div>
+            <h4 class="font-bold text-base text-slate-900" x-text="title"></h4>
+            <p class="text-xs text-slate-500 mt-1 leading-relaxed" x-text="message"></p>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-2">
+            <button type="button" @click="open = false" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">Batal</button>
+            <button type="button" @click="submit()" class="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-red-600 hover:bg-red-700 shadow-md shadow-red-600/20 transition" x-text="confirmText"></button>
+        </div>
+    </div>
+</div>
+
 <script>
+    document.addEventListener('submit', function (e) {
+        const form = e.target;
+        const msg = form.getAttribute('data-confirm');
+        if (msg && !form._confirmed) {
+            e.preventDefault();
+            window.dispatchEvent(new CustomEvent('open-confirm', {
+                detail: {
+                    form: form,
+                    message: msg,
+                    confirmText: form.getAttribute('data-confirm-btn') || 'Ya, Lanjutkan',
+                    title: form.getAttribute('data-confirm-title') || 'Konfirmasi Tindakan'
+                }
+            }));
+        }
+    });
+
+    @if(!request()->is('tickets*'))
     function updateAdminClock() {
         const el = document.getElementById('admin-live-clock');
         if (!el) return;
@@ -355,7 +411,7 @@
     }
     setInterval(updateAdminClock, 1000);
     updateAdminClock();
+    @endif
 </script>
-@endif
 </body>
 </html>

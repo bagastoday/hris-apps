@@ -235,7 +235,7 @@
     </nav>
 
     {{-- Main Container --}}
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6 pb-24 md:pb-8">
 
         {{-- Alerts --}}
         @if(!request()->routeIs('karyawan.payroll'))
@@ -277,8 +277,35 @@
         @yield('content')
     </main>
 
+    {{-- Mobile Bottom Navigation Bar --}}
+    <nav class="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 px-2 py-1.5 flex items-center justify-around text-[10px] font-semibold text-slate-500 shadow-lg no-print">
+        <a href="{{ route('karyawan.home') }}" class="flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition {{ request()->routeIs('karyawan.home') || request()->routeIs('karyawan.attendance*') ? 'text-brand-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>Presensi</span>
+        </a>
+        <a href="{{ route('leaves.my') }}" class="flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition {{ request()->routeIs('leaves.*') ? 'text-brand-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <span>Cuti</span>
+        </a>
+        <a href="{{ route('karyawan.payroll') }}" class="flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition {{ request()->routeIs('karyawan.payroll') ? 'text-brand-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.12-3 2.5S10.343 13 12 13s3 1.12 3 2.5S13.657 18 12 18m0-10V6m0 2v10m0 0v2m9-8a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>Gaji</span>
+        </a>
+        <a href="{{ route('karyawan.tickets') }}" class="flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition relative {{ request()->routeIs('karyawan.tickets*') ? 'text-brand-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+            <span>Bantuan</span>
+            @if($ticketUnreadCount > 0)
+                <span class="absolute top-0.5 right-1 w-2 h-2 rounded-full bg-rose-500"></span>
+            @endif
+        </a>
+        <a href="{{ route('profile.edit') }}" class="flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition {{ request()->routeIs('profile.*') ? 'text-brand-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <span>Profil</span>
+        </a>
+    </nav>
+
     {{-- Footer --}}
-    <footer class="mt-auto py-6 text-center text-xs text-slate-400 border-t border-slate-200/60 no-print">
+    <footer class="mt-auto py-6 text-center text-xs text-slate-400 border-t border-slate-200/60 no-print pb-24 md:pb-6">
         <p>&copy; {{ date('Y') }} TalentaCore HRIS &bull; Portal Layanan Mandiri Pegawai</p>
     </footer>
 

@@ -165,7 +165,7 @@ class FinancePayrollAccessTest extends TestCase
         $this->actingAs($finance);
 
         $this->get(route('karyawan.home'))->assertOk()->assertSee('Portal Pegawai');
-        $photo = 'data:image/png;base64,'.base64_encode('attendance-photo');
+        $photo = 'data:image/jpeg;base64,'.base64_encode('attendance-photo');
 
         $this->post(route('karyawan.attendance.checkin'), ['photo_base64' => $photo])
             ->assertRedirect()

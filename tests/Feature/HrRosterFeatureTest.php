@@ -111,7 +111,7 @@ class HrRosterFeatureTest extends TestCase
             'end_time' => '18:30',
         ]);
 
-        $photo = 'data:image/png;base64,'.base64_encode('attendance-photo');
+        $photo = 'data:image/jpeg;base64,'.base64_encode('attendance-photo');
         $this->actingAs($employeeUser)
             ->post(route('karyawan.attendance.checkin'), ['photo_base64' => $photo])
             ->assertRedirect()
@@ -215,7 +215,7 @@ class HrRosterFeatureTest extends TestCase
             'base_salary' => 1000,
         ]);
         \Illuminate\Support\Facades\Storage::fake('public');
-        $photo = 'data:image/png;base64,'.base64_encode('attendance-photo');
+        $photo = 'data:image/jpeg;base64,'.base64_encode('attendance-photo');
 
         $this->actingAs($user)
             ->post(route('karyawan.attendance.checkin'), ['photo_base64' => $photo])

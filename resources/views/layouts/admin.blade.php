@@ -213,13 +213,6 @@
             </div>
 
             <div class="flex items-center gap-4">
-                @if(!request()->is('tickets*'))
-                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100/80 text-xs text-slate-600 font-medium">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span id="admin-live-clock" class="font-mono font-semibold text-slate-800">--:--:-- WIB</span>
-                </div>
-                @endif
-
                 {{-- Tombol Profil + Popup --}}
                 <div class="relative" x-data="{ open: false }">
                 <button @click="open = !open" type="button"
@@ -395,23 +388,6 @@ x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center
         }
     });
 
-    @if(!request()->is('tickets*'))
-    function updateAdminClock() {
-        const el = document.getElementById('admin-live-clock');
-        if (!el) return;
-        const now = new Date();
-        const timeStr = new Intl.DateTimeFormat('id-ID', {
-            timeZone: 'Asia/Jakarta',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hourCycle: 'h23',
-        }).format(now);
-        el.textContent = timeStr + ' WIB';
-    }
-    setInterval(updateAdminClock, 1000);
-    updateAdminClock();
-    @endif
 </script>
 </body>
 </html>

@@ -105,11 +105,15 @@ class KaryawanAttendanceController extends Controller
             return back()->with('error', 'Kamu sudah melakukan absen masuk hari ini.');
         }
 
-        $photoInput = $request->file('photo') ?? $request->input('photo_base64');
-        if (!$photoInput) {
-            return back()->with('error', 'Wajib menyertakan foto selfie / kamera untuk melakukan absensi.');
+        if ($request->hasFile('photo')) {
+            return back()->with('error', 'Unggah gambar tidak diperbolehkan. Ambil foto menggunakan kamera langsung.');
         }
 
+        $request->validate([
+            'photo_base64' => ['required', 'string', 'regex:/^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+        $photoInput = $request->input('photo_base64');
         $photoPath = $this->storePhoto($photoInput, 'in_' . $employee->id);
 
         $now = now();
@@ -159,11 +163,15 @@ class KaryawanAttendanceController extends Controller
             return back()->with('error', 'Kamu sudah melakukan absen pulang hari ini.');
         }
 
-        $photoInput = $request->file('photo') ?? $request->input('photo_base64');
-        if (!$photoInput) {
-            return back()->with('error', 'Wajib menyertakan foto selfie / kamera untuk melakukan absensi pulang.');
+        if ($request->hasFile('photo')) {
+            return back()->with('error', 'Unggah gambar tidak diperbolehkan. Ambil foto menggunakan kamera langsung.');
         }
 
+        $request->validate([
+            'photo_base64' => ['required', 'string', 'regex:/^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+        $photoInput = $request->input('photo_base64');
         $photoPath = $this->storePhoto($photoInput, 'out_' . $employee->id);
         $currentTime = now()->format('H:i:s');
 
@@ -190,12 +198,10 @@ class KaryawanAttendanceController extends Controller
 
         $binaryData = null;
 
-        if ($photoInput instanceof \Illuminate\Http\UploadedFile) {
-            $binaryData = file_get_contents($photoInput->getRealPath());
-        } elseif (is_string($photoInput) && str_starts_with($photoInput, 'data:image')) {
+        if (is_string($photoInput) && str_starts_with($photoInput, 'data:image/jpeg;base64,')) {
             @list(, $data) = explode(';', $photoInput);
             @list(, $data) = explode(',', $data);
-            $binaryData = base64_decode($data);
+            $binaryData = base64_decode($data, true);
         }
 
         if (! $binaryData) {

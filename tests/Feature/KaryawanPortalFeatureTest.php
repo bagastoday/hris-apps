@@ -10,6 +10,8 @@ use App\Models\Position;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class KaryawanPortalFeatureTest extends TestCase
@@ -62,6 +64,36 @@ class KaryawanPortalFeatureTest extends TestCase
             ->assertSee('Presensi Pulang')
             ->assertSee('08:15:00 WIB')
             ->assertSee('Hadir');
+    }
+
+    public function test_karyawan_cannot_submit_attendance_photo_upload(): void
+    {
+        [$user] = $this->createKaryawan();
+
+        $this->actingAs($user)
+            ->post(route('karyawan.attendance.checkin'), [
+                'photo' => UploadedFile::fake()->create('selfie.jpg', 20, 'image/jpeg'),
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error', 'Unggah gambar tidak diperbolehkan. Ambil foto menggunakan kamera langsung.');
+    }
+
+    public function test_karyawan_can_submit_camera_photo_without_liveness_challenge(): void
+    {
+        [$user, $employee] = $this->createKaryawan();
+        Storage::fake('public');
+
+        $this->actingAs($user)
+            ->post(route('karyawan.attendance.checkin'), [
+                'photo_base64' => 'data:image/jpeg;base64,'.base64_encode('attendance-photo'),
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('attendances', [
+            'employee_id' => $employee->id,
+            'check_in' => now()->format('H:i:s'),
+        ]);
     }
 
     public function test_karyawan_can_access_leaves_page_and_view_quota(): void

@@ -52,7 +52,7 @@
 
     {{-- Top Navigation Bar --}}
     <nav class="bg-white border-b border-slate-200 sticky top-0 z-30 no-print shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-2 flex items-center justify-between gap-4">
             
             {{-- Brand Logo & Title --}}
                 <div class="flex min-w-0 flex-1 items-center gap-3 lg:gap-6">
@@ -69,7 +69,7 @@
                 </a>
 
                 {{-- Desktop Navigation Tabs --}}
-                <div class="hidden md:flex min-w-0 flex-1 items-center gap-1 lg:gap-1.5 overflow-x-auto py-1">
+                <div class="hidden md:flex min-w-0 flex-1 flex-wrap items-center gap-1 lg:gap-1.5 overflow-visible py-1">
                     <a href="{{ route('karyawan.home') }}"
                        class="px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 whitespace-nowrap shrink-0 {{ request()->routeIs('karyawan.home') || request()->routeIs('karyawan.attendance*') ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

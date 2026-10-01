@@ -407,16 +407,17 @@
     </div>
 
     {{-- Interactive Camera Modal --}}
-    <div x-show="cameraModal" x-cloak
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+    <template x-teleport="body">
+        <div x-show="cameraModal" x-cloak
+             class="fixed inset-0 z-50 flex h-screen w-screen items-center justify-center overflow-y-auto p-4 bg-slate-950/70 backdrop-blur-sm">
         <div @click.away="closeCamera()"
              class="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-100 flex flex-col max-h-[92vh]">
 
             {{-- Header modal --}}
             <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                    <h3 class="font-bold text-slate-900 text-base" x-text="actionType === 'in' ? '📸 Ambil Foto Absen Masuk' : '📸 Ambil Foto Absen Pulang'"></h3>
-                    <p class="text-xs text-slate-400">Posisikan wajahmu dengan jelas di dalam kamera</p>
+                    <h3 class="font-bold text-slate-900 text-base" x-text="actionType === 'in' ? 'Verifikasi Presensi Masuk' : 'Verifikasi Presensi Pulang'"></h3>
+                    <p class="text-xs text-slate-400">Ikuti instruksi gerakan wajah sebelum mengambil foto</p>
                 </div>
                 <button type="button" @click="closeCamera()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -443,17 +444,16 @@
                             📷
                         </div>
                         <p class="text-xs text-slate-200 leading-relaxed" x-text="cameraErrorMessage"></p>
-                        <button type="button" @click="triggerFileInput()"
+                        <button type="button" @click="startStream(facingMode)"
                                 class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow-md transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            Pilih Foto dari Galeri / Kamera HP
+                            Coba Lagi
                         </button>
                     </div>
 
                     {{-- Oval guide frame for face alignment --}}
                     <div class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center" x-show="!photoTaken && !cameraError">
-                        <div class="w-40 h-52 sm:w-48 sm:h-60 rounded-[50%] border-2 border-dashed border-white/60 shadow-[0_0_0_9999px_rgba(15,23,42,0.35)]"></div>
-                        <span class="text-[10px] text-white/90 bg-black/50 px-2.5 py-0.5 rounded-full mt-2 backdrop-blur-xs font-medium">Posisikan wajah di dalam bingkai</span>
+                            <div class="w-40 h-52 sm:w-48 sm:h-60 rounded-[50%] border-2 border-dashed border-white/60 shadow-[0_0_0_9999px_rgba(15,23,42,0.35)]"></div>
+                            <span class="text-[10px] text-white/90 bg-black/50 px-2.5 py-1 rounded-full mt-2 backdrop-blur-xs font-medium text-center">Posisikan wajah di dalam bingkai</span>
                     </div>
 
                     {{-- Realtime stamp watermark on video/photo --}}
@@ -474,7 +474,7 @@
                 <div class="flex items-center justify-center gap-3">
                     <template x-if="!photoTaken && !cameraError">
                         <button type="button" @click="snapPhoto()"
-                                class="w-full py-2.5 px-4 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm rounded-xl shadow-md shadow-brand-600/20 transition flex items-center justify-center gap-2">
+                            class="w-full py-2.5 px-4 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm rounded-xl shadow-md shadow-brand-600/20 transition flex items-center justify-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                             Ambil Foto Sekarang
                         </button>
@@ -490,7 +490,7 @@
 
                 {{-- Form submit --}}
                 <form :action="actionType === 'in' ? '{{ route('karyawan.attendance.checkin') }}' : '{{ route('karyawan.attendance.checkout') }}'"
-                      method="POST" enctype="multipart/form-data" class="space-y-3 pt-2 border-t border-slate-100"
+                      method="POST" class="space-y-3 pt-2 border-t border-slate-100"
                       @submit="isSubmitting = true">
                     @csrf
                     <input type="hidden" name="photo_base64" :value="photoData">
@@ -499,15 +499,6 @@
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Catatan / Keterangan (Opsional)</label>
                         <input type="text" name="notes" placeholder="Contoh: WFO di kantor / Meeting klien"
                                class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600">
-                    </div>
-
-                    {{-- Fallback file upload --}}
-                    <div class="text-center">
-                        <label class="text-[11px] text-brand-600 hover:underline cursor-pointer inline-flex items-center gap-1">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            <span>Atau upload foto langsung dari galeri / kamera HP</span>
-                            <input type="file" id="attendanceFileInput" name="photo" accept="image/*" class="hidden" @change="handleFileUpload($event)">
-                        </label>
                     </div>
 
                     <button type="submit" :disabled="!photoData || isSubmitting"
@@ -519,6 +510,7 @@
             </div>
         </div>
     </div>
+    </template>
 
     {{-- Interactive Photo Preview Modal --}}
     <div x-show="previewPhotoModal" x-cloak
@@ -622,7 +614,7 @@
                 // Pemeriksaan navigator.mediaDevices
                 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                     this.cameraError = true;
-                    this.cameraErrorMessage = 'Akses kamera otomatis membutuhkan koneksi aman (HTTPS / localhost). Kamu dapat memilih opsi "Pilih Foto dari Galeri / Kamera HP" di bawah.';
+                    this.cameraErrorMessage = 'Kamera memerlukan HTTPS atau localhost. Buka portal melalui koneksi aman dan izinkan akses kamera.';
                     return;
                 }
 
@@ -634,12 +626,16 @@
                     this.stream = stream;
                     if (video) {
                         video.srcObject = stream;
-                        video.play().catch(() => {});
+                        await video.play();
+                        if (video.readyState < 2) {
+                            await new Promise((resolve) => video.addEventListener('loadeddata', resolve, { once: true }));
+                        }
                     }
                 } catch (err) {
                     console.warn('Webcam access error:', err);
                     this.cameraError = true;
-                    this.cameraErrorMessage = 'Tidak dapat mengakses kamera: ' + (err.name === 'NotAllowedError' ? 'Izin kamera ditolak browser.' : err.message) + '. Silakan gunakan opsi unggah foto dari galeri / kamera HP.';
+                    this.cameraErrorMessage = 'Tidak dapat mengakses kamera: ' + (err.name === 'NotAllowedError' ? 'izin kamera ditolak browser.' : err.message) + ' Periksa izin kamera, lalu coba lagi.';
+                    this.stopStream();
                 }
             },
 
@@ -723,24 +719,6 @@
                 this.startStream(this.facingMode);
             },
 
-            handleFileUpload(e) {
-                const file = e.target.files && e.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = (evt) => {
-                    this.photoData = evt.target.result;
-                    this.photoTaken = true;
-                    this.cameraError = false;
-                    this.stopStream();
-                };
-                reader.readAsDataURL(file);
-            },
-
-            triggerFileInput() {
-                const fileInput = document.getElementById('attendanceFileInput');
-                if (fileInput) fileInput.click();
-            }
         };
     }
 

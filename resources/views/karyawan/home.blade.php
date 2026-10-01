@@ -169,10 +169,11 @@
 
                 @if($todayAttendance && $todayAttendance->check_in)
                     <div class="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3">
-                        @if($todayAttendance->check_in_photo)
-                            <img src="{{ asset('storage/' . $todayAttendance->check_in_photo) }}" alt="Foto Masuk"
-                                 @click="openPreview('{{ asset('storage/' . $todayAttendance->check_in_photo) }}', 'Foto Absen Masuk')"
-                                 class="w-14 h-14 rounded-lg object-cover border border-slate-200 cursor-pointer hover:opacity-90 transition">
+                        @if($todayAttendance->check_in_photo_url)
+                            <img src="{{ $todayAttendance->check_in_photo_url }}" alt="Foto Masuk"
+                                 @click="openPreview('{{ $todayAttendance->check_in_photo_url }}', 'Foto Absen Masuk')"
+                                 class="w-14 h-14 rounded-lg object-cover border border-slate-200 cursor-pointer hover:opacity-90 transition shadow-sm"
+                                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode($employee->full_name ?? 'User') }}&background=0D8ABC&color=fff';">
                         @else
                             <div class="w-14 h-14 rounded-lg bg-slate-200 flex items-center justify-center text-xs text-slate-400 font-medium">No Foto</div>
                         @endif
@@ -237,10 +238,11 @@
 
                 @if($todayAttendance && $todayAttendance->check_out)
                     <div class="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3">
-                        @if($todayAttendance->check_out_photo)
-                            <img src="{{ asset('storage/' . $todayAttendance->check_out_photo) }}" alt="Foto Pulang"
-                                 @click="openPreview('{{ asset('storage/' . $todayAttendance->check_out_photo) }}', 'Foto Absen Pulang')"
-                                 class="w-14 h-14 rounded-lg object-cover border border-slate-200 cursor-pointer hover:opacity-90 transition">
+                        @if($todayAttendance->check_out_photo_url)
+                            <img src="{{ $todayAttendance->check_out_photo_url }}" alt="Foto Pulang"
+                                 @click="openPreview('{{ $todayAttendance->check_out_photo_url }}', 'Foto Absen Pulang')"
+                                 class="w-14 h-14 rounded-lg object-cover border border-slate-200 cursor-pointer hover:opacity-90 transition shadow-sm"
+                                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode($employee->full_name ?? 'User') }}&background=6B21A8&color=fff';">
                         @else
                             <div class="w-14 h-14 rounded-lg bg-slate-200 flex items-center justify-center text-xs text-slate-400 font-medium">No Foto</div>
                         @endif
@@ -382,17 +384,19 @@
                             </td>
                             <td class="px-4 py-4">
                                 <div class="flex items-center gap-2">
-                                    @if($att->check_in_photo)
-                                        <button type="button" @click="openPreview('{{ asset('storage/' . $att->check_in_photo) }}', 'Foto Presensi Masuk ({{ $att->date?->format('d M Y') }})')"
+                                    @if($att->check_in_photo_url)
+                                        <button type="button" @click="openPreview('{{ $att->check_in_photo_url }}', 'Foto Presensi Masuk ({{ $att->date?->format('d M Y') }})')"
                                                 class="group relative block" title="Lihat Foto Masuk">
-                                            <img src="{{ asset('storage/' . $att->check_in_photo) }}" class="w-8 h-8 rounded-lg object-cover ring-1 ring-slate-200 group-hover:ring-brand-500 transition shadow-sm">
+                                            <img src="{{ $att->check_in_photo_url }}" class="w-8 h-8 rounded-lg object-cover ring-1 ring-slate-200 group-hover:ring-brand-500 transition shadow-sm"
+                                                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=In&background=2563EB&color=fff';">
                                             <span class="absolute -top-1 -right-1 bg-brand-600 text-[8px] font-bold text-white px-1 rounded shadow">In</span>
                                         </button>
                                     @endif
-                                    @if($att->check_out_photo)
-                                        <button type="button" @click="openPreview('{{ asset('storage/' . $att->check_out_photo) }}', 'Foto Presensi Pulang ({{ $att->date?->format('d M Y') }})')"
+                                    @if($att->check_out_photo_url)
+                                        <button type="button" @click="openPreview('{{ $att->check_out_photo_url }}', 'Foto Presensi Pulang ({{ $att->date?->format('d M Y') }})')"
                                                 class="group relative block" title="Lihat Foto Pulang">
-                                            <img src="{{ asset('storage/' . $att->check_out_photo) }}" class="w-8 h-8 rounded-lg object-cover ring-1 ring-slate-200 group-hover:ring-purple-500 transition shadow-sm">
+                                            <img src="{{ $att->check_out_photo_url }}" class="w-8 h-8 rounded-lg object-cover ring-1 ring-slate-200 group-hover:ring-purple-500 transition shadow-sm"
+                                                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=Out&background=9333EA&color=fff';">
                                             <span class="absolute -top-1 -right-1 bg-purple-600 text-[8px] font-bold text-white px-1 rounded shadow">Out</span>
                                         </button>
                                     @endif

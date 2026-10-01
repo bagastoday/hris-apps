@@ -131,9 +131,9 @@
                                 <button type="button" onclick="showPhotos(this)"
                                     data-name="{{ $att->employee->full_name ?? '-' }}"
                                     data-date="{{ $att->date->format('d M Y') }}"
-                                    data-in="{{ $att->check_in_photo ? asset('storage/' . $att->check_in_photo) : '' }}"
+                                    data-in="{{ $att->check_in_photo_url ?? '' }}"
                                     data-in-time="{{ $fmt($att->check_in) }}"
-                                    data-out="{{ $att->check_out_photo ? asset('storage/' . $att->check_out_photo) : '' }}"
+                                    data-out="{{ $att->check_out_photo_url ?? '' }}"
                                     data-out-time="{{ $fmt($att->check_out) }}"
                                     class="group inline-flex items-center gap-1.5 rounded-lg border border-sky-100 bg-sky-50 px-2.5 py-1.5 text-xs font-semibold text-sky-700 transition hover:border-sky-200 hover:bg-sky-100 hover:shadow-sm">
                                     <svg class="h-3.5 w-3.5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5" stroke-width="1.8"/></svg>
@@ -174,8 +174,9 @@
                     <p class="text-xs font-medium text-slate-500 mb-2">
                         {{ $label }} <span id="photo-{{ $key }}-time" class="text-slate-400"></span>
                     </p>
-                    <img id="photo-{{ $key }}-img" src="" alt="{{ $label }}" class="hidden w-full aspect-[3/4] object-cover rounded-xl border border-slate-100">
-                    <div id="photo-{{ $key }}-empty" class="w-full aspect-[3/4] rounded-xl border border-dashed border-slate-200 flex items-center justify-center text-xs text-slate-400">
+                    <img id="photo-{{ $key }}-img" src="" alt="{{ $label }}" class="hidden w-full aspect-[3/4] object-cover rounded-xl border border-slate-100 shadow-sm"
+                         onerror="this.classList.add('hidden'); const e = document.getElementById('photo-{{ $key }}-empty'); e.classList.remove('hidden'); e.innerHTML = '<div class=\'text-center p-3 text-slate-400\'>⚠️ Foto tersimpan di perangkat lokal pelapor</div>';">
+                    <div id="photo-{{ $key }}-empty" class="w-full aspect-[3/4] rounded-xl border border-dashed border-slate-200 flex items-center justify-center text-xs text-slate-400 text-center p-3">
                         Tidak ada foto
                     </div>
                 </div>

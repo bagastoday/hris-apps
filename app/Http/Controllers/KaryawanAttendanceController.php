@@ -184,26 +184,66 @@ class KaryawanAttendanceController extends Controller
     // Helper untuk menyimpan foto baik dari webcam (base64) maupun file upload
     protected function storePhoto($photoInput, string $prefix): ?string
     {
-        if (!$photoInput) {
+        if (! $photoInput) {
             return null;
         }
 
-        if ($photoInput instanceof \Illuminate\Http\UploadedFile) {
-            return $photoInput->store('attendances', 'public');
-        }
+        $binaryData = null;
 
-        if (is_string($photoInput) && str_starts_with($photoInput, 'data:image')) {
+        if ($photoInput instanceof \Illuminate\Http\UploadedFile) {
+            $binaryData = file_get_contents($photoInput->getRealPath());
+        } elseif (is_string($photoInput) && str_starts_with($photoInput, 'data:image')) {
             @list(, $data) = explode(';', $photoInput);
             @list(, $data) = explode(',', $data);
-            $decoded = base64_decode($data);
+            $binaryData = base64_decode($data);
+        }
 
-            if ($decoded !== false) {
-                $filename = 'attendances/' . $prefix . '_' . time() . '_' . uniqid() . '.jpg';
-                Storage::disk('public')->put($filename, $decoded);
-                return $filename;
+        if (! $binaryData) {
+            return null;
+        }
+
+        // Simpan cadangan berkas fisik di storage lokal
+        $filename = 'attendances/' . $prefix . '_' . time() . '_' . uniqid() . '.jpg';
+        Storage::disk('public')->put($filename, $binaryData);
+
+        // Kompresi ringan via GD agar ukuran Data URI kecil (~20-30KB) dan bisa dibuka di semua laptop/perangkat
+        if (function_exists('imagecreatefromstring')) {
+            $img = @imagecreatefromstring($binaryData);
+            if ($img !== false) {
+                $origW = imagesx($img);
+                $origH = imagesy($img);
+                $maxDim = 480;
+
+                if ($origW > $maxDim || $origH > $maxDim) {
+                    if ($origW > $origH) {
+                        $newW = $maxDim;
+                        $newH = (int) round(($origH / $origW) * $maxDim);
+                    } else {
+                        $newH = $maxDim;
+                        $newW = (int) round(($origW / $origH) * $maxDim);
+                    }
+                    $resized = imagecreatetruecolor($newW, $newH);
+                    imagecopyresampled($resized, $img, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
+                    imagedestroy($img);
+                    $img = $resized;
+                }
+
+                ob_start();
+                imagejpeg($img, null, 75);
+                $compressed = ob_get_clean();
+                imagedestroy($img);
+
+                if ($compressed) {
+                    return 'data:image/jpeg;base64,' . base64_encode($compressed);
+                }
             }
         }
 
-        return null;
+        // Jika ukuran binary < 200KB, simpan sebagai Data URI agar bisa dibuka teman di laptop lain
+        if (strlen($binaryData) < 200000) {
+            return 'data:image/jpeg;base64,' . base64_encode($binaryData);
+        }
+
+        return $filename;
     }
 }

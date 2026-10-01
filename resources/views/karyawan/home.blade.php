@@ -4,22 +4,7 @@
 @section('title', 'Portal Presensi')
 
 @section('content')
-<div x-data="{
-    cameraModal: false,
-    previewPhotoModal: false,
-    previewPhotoUrl: '',
-    previewPhotoTitle: '',
-    actionType: 'in',
-    photoData: '',
-    stream: null,
-    facingMode: 'user',
-    photoTaken: false,
-    openPreview(url, title) {
-        this.previewPhotoUrl = url;
-        this.previewPhotoTitle = title;
-        this.previewPhotoModal = true;
-    }
-}" class="space-y-6">
+<div x-data="attendanceManager()" id="attendance-root" class="space-y-6">
 
     {{-- Top Hero: Identity & Realtime Clock --}}
     <div class="gradient-hero rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
@@ -444,7 +429,7 @@
                     {{-- Live video --}}
                     <video id="webcam" autoplay playsinline class="w-full h-full object-cover"
                            :class="facingMode === 'user' ? 'transform -scale-x-100' : ''"
-                           x-show="!photoTaken"></video>
+                           x-show="!photoTaken && !cameraError"></video>
 
                     {{-- Canvas (hidden, used for snapshot) --}}
                     <canvas id="photoCanvas" class="hidden"></canvas>
@@ -452,8 +437,21 @@
                     {{-- Image preview after snapshot --}}
                     <img id="photoPreview" :src="photoData" class="w-full h-full object-cover" x-show="photoTaken" alt="Hasil Foto">
 
+                    {{-- Fallback UI when webcam fails / inaccessible --}}
+                    <div x-show="cameraError && !photoTaken" class="p-6 text-center text-white space-y-3 z-10">
+                        <div class="w-12 h-12 mx-auto rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center text-2xl">
+                            📷
+                        </div>
+                        <p class="text-xs text-slate-200 leading-relaxed" x-text="cameraErrorMessage"></p>
+                        <button type="button" @click="triggerFileInput()"
+                                class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow-md transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            Pilih Foto dari Galeri / Kamera HP
+                        </button>
+                    </div>
+
                     {{-- Oval guide frame for face alignment --}}
-                    <div class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center" x-show="!photoTaken">
+                    <div class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center" x-show="!photoTaken && !cameraError">
                         <div class="w-40 h-52 sm:w-48 sm:h-60 rounded-[50%] border-2 border-dashed border-white/60 shadow-[0_0_0_9999px_rgba(15,23,42,0.35)]"></div>
                         <span class="text-[10px] text-white/90 bg-black/50 px-2.5 py-0.5 rounded-full mt-2 backdrop-blur-xs font-medium">Posisikan wajah di dalam bingkai</span>
                     </div>
@@ -465,7 +463,7 @@
                     </div>
 
                     {{-- Camera switch button --}}
-                    <button type="button" @click="switchCamera()" x-show="!photoTaken"
+                    <button type="button" @click="switchCamera()" x-show="!photoTaken && !cameraError"
                             class="absolute top-2.5 right-2.5 p-2 rounded-xl bg-black/50 text-white hover:bg-black/70 transition backdrop-blur-sm"
                             title="Balik Kamera">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -474,7 +472,7 @@
 
                 {{-- Action to take / retake photo --}}
                 <div class="flex items-center justify-center gap-3">
-                    <template x-if="!photoTaken">
+                    <template x-if="!photoTaken && !cameraError">
                         <button type="button" @click="snapPhoto()"
                                 class="w-full py-2.5 px-4 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm rounded-xl shadow-md shadow-brand-600/20 transition flex items-center justify-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -492,7 +490,8 @@
 
                 {{-- Form submit --}}
                 <form :action="actionType === 'in' ? '{{ route('karyawan.attendance.checkin') }}' : '{{ route('karyawan.attendance.checkout') }}'"
-                      method="POST" enctype="multipart/form-data" class="space-y-3 pt-2 border-t border-slate-100">
+                      method="POST" enctype="multipart/form-data" class="space-y-3 pt-2 border-t border-slate-100"
+                      @submit="isSubmitting = true">
                     @csrf
                     <input type="hidden" name="photo_base64" :value="photoData">
 
@@ -507,14 +506,14 @@
                         <label class="text-[11px] text-brand-600 hover:underline cursor-pointer inline-flex items-center gap-1">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                             <span>Atau upload foto langsung dari galeri / kamera HP</span>
-                            <input type="file" name="photo" accept="image/*" class="hidden" @change="handleFileUpload($event)">
+                            <input type="file" id="attendanceFileInput" name="photo" accept="image/*" class="hidden" @change="handleFileUpload($event)">
                         </label>
                     </div>
 
-                    <button type="submit" :disabled="!photoData"
+                    <button type="submit" :disabled="!photoData || isSubmitting"
                             class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        <span x-text="actionType === 'in' ? 'Kirim Absen Masuk' : 'Kirim Absen Pulang'"></span>
+                        <span x-text="isSubmitting ? 'Mengirim...' : (actionType === 'in' ? 'Kirim Absen Masuk' : 'Kirim Absen Pulang')"></span>
                     </button>
                 </form>
             </div>
@@ -573,131 +572,174 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Webcam & Modal Helpers for Alpine.js
-    window.openCamera = function(type) {
-        const root = document.querySelector('[x-data]');
-        const alpine = Alpine.$data(root);
-        alpine.actionType = type;
-        alpine.photoTaken = false;
-        alpine.photoData = '';
-        alpine.cameraModal = true;
+    // Alpine Attendance Component Handler
+    function attendanceManager() {
+        return {
+            cameraModal: false,
+            previewPhotoModal: false,
+            previewPhotoUrl: '',
+            previewPhotoTitle: '',
+            actionType: 'in',
+            photoData: '',
+            stream: null,
+            facingMode: 'user',
+            photoTaken: false,
+            cameraError: false,
+            cameraErrorMessage: '',
+            isSubmitting: false,
 
-        setTimeout(() => {
-            startStream(alpine.facingMode);
-        }, 150);
-    };
+            openPreview(url, title) {
+                this.previewPhotoUrl = url;
+                this.previewPhotoTitle = title;
+                this.previewPhotoModal = true;
+            },
 
-    window.closeCamera = function() {
-        const root = document.querySelector('[x-data]');
-        const alpine = Alpine.$data(root);
-        alpine.cameraModal = false;
-        stopStream();
-    };
+            openCamera(type) {
+                this.actionType = type;
+                this.photoTaken = false;
+                this.photoData = '';
+                this.cameraError = false;
+                this.cameraErrorMessage = '';
+                this.cameraModal = true;
 
-    window.startStream = async function(facingMode = 'user') {
-        const video = document.getElementById('webcam');
-        if (!video) return;
+                this.$nextTick(() => {
+                    this.startStream(this.facingMode);
+                });
+            },
 
-        stopStream();
+            closeCamera() {
+                this.cameraModal = false;
+                this.stopStream();
+            },
 
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            alert("Akses kamera otomatis membutuhkan koneksi aman (HTTPS) atau localhost. Kamu dapat langsung memilih opsi 'Upload foto dari galeri/kamera HP' di bawah.");
-            return;
-        }
+            async startStream(facingMode = 'user') {
+                this.stopStream();
+                this.cameraError = false;
+                this.cameraErrorMessage = '';
 
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: facingMode, width: { ideal: 640 }, height: { ideal: 480 } },
-                audio: false
-            });
-            const root = document.querySelector('[x-data]');
-            const alpine = Alpine.$data(root);
-            alpine.stream = stream;
-            video.srcObject = stream;
-        } catch (err) {
-            console.warn("Webcam access error:", err);
-            alert("Tidak dapat mengakses kamera secara langsung. Silakan berikan izin kamera pada browser atau gunakan tombol 'Upload foto dari galeri/kamera HP'.");
-        }
-    };
+                const video = document.getElementById('webcam');
 
-    window.stopStream = function() {
-        const root = document.querySelector('[x-data]');
-        if (!root) return;
-        const alpine = Alpine.$data(root);
-        if (alpine && alpine.stream) {
-            alpine.stream.getTracks().forEach(track => track.stop());
-            alpine.stream = null;
-        }
-    };
+                // Pemeriksaan navigator.mediaDevices
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    this.cameraError = true;
+                    this.cameraErrorMessage = 'Akses kamera otomatis membutuhkan koneksi aman (HTTPS / localhost). Kamu dapat memilih opsi "Pilih Foto dari Galeri / Kamera HP" di bawah.';
+                    return;
+                }
 
-    window.switchCamera = function() {
-        const root = document.querySelector('[x-data]');
-        const alpine = Alpine.$data(root);
-        alpine.facingMode = (alpine.facingMode === 'user') ? 'environment' : 'user';
-        startStream(alpine.facingMode);
-    };
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: facingMode, width: { ideal: 640 }, height: { ideal: 480 } },
+                        audio: false
+                    });
+                    this.stream = stream;
+                    if (video) {
+                        video.srcObject = stream;
+                        video.play().catch(() => {});
+                    }
+                } catch (err) {
+                    console.warn('Webcam access error:', err);
+                    this.cameraError = true;
+                    this.cameraErrorMessage = 'Tidak dapat mengakses kamera: ' + (err.name === 'NotAllowedError' ? 'Izin kamera ditolak browser.' : err.message) + '. Silakan gunakan opsi unggah foto dari galeri / kamera HP.';
+                }
+            },
 
-    window.snapPhoto = function() {
-        const video = document.getElementById('webcam');
-        const canvas = document.getElementById('photoCanvas');
-        if (!video || !canvas) return;
+            stopStream() {
+                if (this.stream) {
+                    this.stream.getTracks().forEach(track => track.stop());
+                    this.stream = null;
+                }
+                const video = document.getElementById('webcam');
+                if (video) {
+                    video.srcObject = null;
+                }
+            },
 
-        const w = video.videoWidth || 640;
-        const h = video.videoHeight || 480;
-        canvas.width = w;
-        canvas.height = h;
+            switchCamera() {
+                this.facingMode = (this.facingMode === 'user') ? 'environment' : 'user';
+                this.startStream(this.facingMode);
+            },
 
-        const ctx = canvas.getContext('2d');
-        const root = document.querySelector('[x-data]');
-        const alpine = Alpine.$data(root);
+            snapPhoto() {
+                const video = document.getElementById('webcam');
+                const canvas = document.getElementById('photoCanvas');
+                if (!video || !canvas) return;
 
-        // Hanya mirror jika menggunakan kamera depan
-        if (alpine.facingMode === 'user') {
-            ctx.save();
-            ctx.scale(-1, 1);
-            ctx.drawImage(video, -w, 0, w, h);
-            ctx.restore();
-        } else {
-            ctx.drawImage(video, 0, 0, w, h);
-        }
+                const w = video.videoWidth || 640;
+                const h = video.videoHeight || 480;
+                canvas.width = w;
+                canvas.height = h;
 
-        // Watermark timestamp
-        const now = new Date();
-        const timeStamp = now.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('id-ID') + ' WIB';
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-        ctx.fillRect(10, h - 36, w - 20, 26);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '14px Inter, sans-serif';
-        ctx.fillText(timeStamp, 20, h - 18);
+                const ctx = canvas.getContext('2d');
 
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                // Hanya mirror jika kamera depan
+                if (this.facingMode === 'user') {
+                    ctx.save();
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(video, -w, 0, w, h);
+                    ctx.restore();
+                } else {
+                    ctx.drawImage(video, 0, 0, w, h);
+                }
 
-        alpine.photoData = dataUrl;
-        alpine.photoTaken = true;
-        stopStream();
-    };
+                // Watermark timestamp
+                const now = new Date();
+                const timeStamp = now.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('id-ID') + ' WIB';
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+                ctx.fillRect(10, h - 36, w - 20, 26);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '14px Inter, sans-serif';
+                ctx.fillText(timeStamp, 20, h - 18);
 
-    window.retakePhoto = function() {
-        const root = document.querySelector('[x-data]');
-        const alpine = Alpine.$data(root);
-        alpine.photoTaken = false;
-        alpine.photoData = '';
-        startStream(alpine.facingMode);
-    };
+                this.photoData = canvas.toDataURL('image/jpeg', 0.85);
+                this.photoTaken = true;
+                this.stopStream();
+            },
 
-    window.handleFileUpload = function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+            retakePhoto() {
+                this.photoTaken = false;
+                this.photoData = '';
+                this.startStream(this.facingMode);
+            },
 
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            const root = document.querySelector('[x-data]');
-            const alpine = Alpine.$data(root);
-            alpine.photoData = evt.target.result;
-            alpine.photoTaken = true;
-            stopStream();
+            handleFileUpload(e) {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    this.photoData = evt.target.result;
+                    this.photoTaken = true;
+                    this.cameraError = false;
+                    this.stopStream();
+                };
+                reader.readAsDataURL(file);
+            },
+
+            triggerFileInput() {
+                const fileInput = document.getElementById('attendanceFileInput');
+                if (fileInput) fileInput.click();
+            }
         };
-        reader.readAsDataURL(file);
+    }
+
+    // Daftarkan ke Alpine
+    window.attendanceManager = attendanceManager;
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('attendanceManager', attendanceManager);
+    });
+
+    // Fallback helper global
+    window.openCamera = function(type) {
+        const root = document.getElementById('attendance-root');
+        if (root && window.Alpine) {
+            Alpine.$data(root).openCamera(type);
+        }
+    };
+    window.closeCamera = function() {
+        const root = document.getElementById('attendance-root');
+        if (root && window.Alpine) {
+            Alpine.$data(root).closeCamera();
+        }
     };
 </script>
 @endpush

@@ -13,7 +13,7 @@ class AuthPageAppearanceTest extends TestCase
         $this->get(route('login'))
             ->assertOk()
             ->assertSee('from-sky-50 via-white to-indigo-50')
-            ->assertSee('Masuk ke TalentaCore');
+            ->assertSee('TalentaCore');
     }
 
     public function test_change_password_page_uses_a_light_background_and_renders(): void

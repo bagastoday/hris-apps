@@ -683,12 +683,34 @@
 
                 // Watermark timestamp
                 const now = new Date();
-                const timeStamp = now.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('id-ID') + ' WIB';
+                const dateStamp = new Intl.DateTimeFormat('id-ID', {
+                    timeZone: 'Asia/Jakarta',
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                }).format(now);
+                const timeStamp = new Intl.DateTimeFormat('id-ID', {
+                    timeZone: 'Asia/Jakarta',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hourCycle: 'h23',
+                }).format(now) + ' WIB';
+                const fontSize = Math.max(10, Math.min(13, Math.floor(w / 36)));
+                const padding = 8;
+                const lineGap = 3;
+                const maxTextWidth = Math.max(1, w - padding * 2 - 20);
+                const barHeight = padding * 2 + fontSize * 2 + lineGap;
+                const barX = 10;
+                const barY = Math.max(0, h - barHeight - 10);
+
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-                ctx.fillRect(10, h - 36, w - 20, 26);
+                ctx.fillRect(barX, barY, w - 20, barHeight);
                 ctx.fillStyle = '#ffffff';
-                ctx.font = '14px Inter, sans-serif';
-                ctx.fillText(timeStamp, 20, h - 18);
+                ctx.font = `${fontSize}px sans-serif`;
+                ctx.textBaseline = 'top';
+                ctx.fillText(dateStamp, barX + padding, barY + padding, maxTextWidth);
+                ctx.fillText(timeStamp, barX + padding, barY + padding + fontSize + lineGap, maxTextWidth);
 
                 this.photoData = canvas.toDataURL('image/jpeg', 0.85);
                 this.photoTaken = true;

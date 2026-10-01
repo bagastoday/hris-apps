@@ -174,7 +174,7 @@
                     <p class="text-xs font-medium text-slate-500 mb-2">
                         {{ $label }} <span id="photo-{{ $key }}-time" class="text-slate-400"></span>
                     </p>
-                    <img id="photo-{{ $key }}-img" src="" alt="{{ $label }}" class="hidden w-full aspect-[3/4] object-cover rounded-xl border border-slate-100 shadow-sm"
+                    <img id="photo-{{ $key }}-img" src="" alt="{{ $label }}" class="hidden w-full max-h-[56vh] object-contain rounded-xl border border-slate-100 bg-slate-50 shadow-sm"
                          onerror="this.classList.add('hidden'); const e = document.getElementById('photo-{{ $key }}-empty'); e.classList.remove('hidden'); e.innerHTML = '<div class=\'text-center p-3 text-slate-400\'>⚠️ Foto tersimpan di perangkat lokal pelapor</div>';">
                     <div id="photo-{{ $key }}-empty" class="w-full aspect-[3/4] rounded-xl border border-dashed border-slate-200 flex items-center justify-center text-xs text-slate-400 text-center p-3">
                         Tidak ada foto

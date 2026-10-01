@@ -8,12 +8,14 @@ use App\Http\Controllers\KaryawanAttendanceController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\RosterController;
 use App\Http\Controllers\TicketController;
 use App\Models\Attendance;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Leave;
 use App\Models\Position;
+use App\Models\RosterSchedule;
 use App\Models\User;
 use App\Support\EmployeeEmailGenerator;
 use Illuminate\Http\Request;
@@ -195,6 +197,13 @@ Route::post('/change-password', function (Request $request) {
 Route::middleware('role:finance')->prefix('finance')->name('finance.')->group(function () {
     Route::get('/', [FinanceController::class, 'index'])->name('index');
     Route::get('/salaries', [FinanceController::class, 'salaries'])->name('salaries');
+    Route::get('/reimbursements', [FinanceController::class, 'reimbursementApprovals'])->name('reimbursements');
+    Route::post('/reimbursements/{ticket}/decision', [FinanceController::class, 'decideReimbursement'])->name('reimbursements.decision');
+    Route::get('/transactions', [FinanceController::class, 'transactions'])->name('transactions');
+    Route::post('/transactions', [FinanceController::class, 'storeTransaction'])->name('transactions.store');
+    Route::post('/transactions/{transaction}/paid', [FinanceController::class, 'markTransactionPaid'])->name('transactions.paid');
+    Route::get('/exports/cashflow', [FinanceController::class, 'exportCashflow'])->name('exports.cashflow');
+    Route::get('/exports/payroll', [FinanceController::class, 'exportPayroll'])->name('exports.payroll');
     Route::put('/employees/{employee}/salary', [FinanceController::class, 'updateSalary'])->name('salary.update');
     Route::post('/payroll', [FinanceController::class, 'createPayroll'])->name('payroll.store');
     Route::put('/payroll/{payroll}/items/{item}', [FinanceController::class, 'updateItem'])->name('payroll.items.update');
@@ -323,6 +332,10 @@ Route::post('/karyawan/tickets/{ticket}/reply', [TicketController::class, 'karya
     ->name('karyawan.tickets.reply')
     ->middleware('role:karyawan,hr,finance');
 
+Route::get('/tickets/{ticket}/reimbursement-proof', [TicketController::class, 'reimbursementProof'])
+    ->name('tickets.reimbursements.proof')
+    ->middleware('role:karyawan,finance');
+
 // ========== PEGAWAI (HR only) ==========
 Route::get('/employees', function (Request $request) {
     $filters = $request->validate([
@@ -332,7 +345,7 @@ Route::get('/employees', function (Request $request) {
     $search = trim($filters['search'] ?? '');
     $departmentId = $filters['department_id'] ?? '';
 
-    $employees = Employee::with(['department', 'position'])
+    $employees = Employee::with(['department', 'position', 'user'])
         ->when($departmentId !== '', fn ($query) => $query->where('department_id', $departmentId))
         ->when($search !== '', fn ($query) => $query->where(fn ($terms) => $terms
             ->where('full_name', 'like', "%{$search}%")
@@ -501,6 +514,18 @@ Route::delete('/positions/{position}', [PositionController::class, 'destroy'])
     ->middleware('role:hr');
 
 // ========== CUTI ==========
+Route::get('/roster', [RosterController::class, 'index'])
+    ->name('roster.index')
+    ->middleware('role:hr');
+
+Route::get('/roster/schedule', [RosterController::class, 'editSchedule'])
+    ->name('roster.schedule.edit')
+    ->middleware('role:hr');
+
+Route::post('/roster/schedule', [RosterController::class, 'updateSchedule'])
+    ->name('roster.schedule.update')
+    ->middleware('role:hr');
+
 Route::get('/leaves', [LeaveController::class, 'index'])
     ->name('leaves.index')
     ->middleware('role:hr');
@@ -544,6 +569,10 @@ Route::get('/attendances', function (Request $request) {
             ->orWhere('nik', 'like', "%{$search}%"))))
         ->latest('check_in')
         ->get();
+    $schedules = RosterSchedule::whereIn('employee_id', $attendances->pluck('employee_id'))
+        ->where('date', $date)
+        ->get()
+        ->keyBy('employee_id');
 
     $summary = [
         'hadir' => $attendances->where('status', 'hadir')->count(),
@@ -554,7 +583,7 @@ Route::get('/attendances', function (Request $request) {
 
     $departments = Department::where('is_active', true)->get();
 
-    return view('admin.attendances.index', compact('attendances', 'summary', 'departments', 'date', 'departmentId', 'search'));
+    return view('admin.attendances.index', compact('attendances', 'schedules', 'summary', 'departments', 'date', 'departmentId', 'search'));
 })->name('attendances.index')->middleware('role:hr');
 
 // ========== PENGUMUMAN KANTOR (HR) ==========

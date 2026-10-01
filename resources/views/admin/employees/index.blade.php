@@ -71,9 +71,13 @@
                         <tr class="hover:bg-slate-50/50 transition">
                             <td class="px-5 py-4">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-sm">
-                                        {{ strtoupper(substr($emp->full_name, 0, 2)) }}
-                                    </div>
+                                    @if($emp->user?->avatar)
+                                        <img src="{{ asset('storage/' . $emp->user->avatar) }}" alt="Foto profil {{ $emp->full_name }}" class="h-10 w-10 rounded-full border border-slate-200 object-cover">
+                                    @else
+                                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">
+                                            {{ strtoupper(substr($emp->full_name, 0, 2)) }}
+                                        </div>
+                                    @endif
                                     <div>
                                         <p class="font-medium text-slate-900">{{ $emp->full_name }}</p>
                                         <p class="text-xs text-slate-400">{{ $emp->employee_code }}</p>

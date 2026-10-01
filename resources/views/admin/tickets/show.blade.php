@@ -64,13 +64,16 @@
                         <p class="text-xs font-semibold text-slate-500 mb-2">Lampiran Bukti / Dokumen:</p>
                         @php
                             $ext = strtolower(pathinfo($ticket->attachment, PATHINFO_EXTENSION));
+                            $attachmentUrl = $ticket->category === 'reimburse' && $ticket->reimbursement_status
+                                ? route('tickets.reimbursements.proof', $ticket)
+                                : asset('storage/' . $ticket->attachment);
                         @endphp
                         @if(in_array($ext, ['jpg', 'jpeg', 'png']))
                             <div class="max-w-md rounded-xl overflow-hidden border border-slate-200">
-                                <img src="{{ asset('storage/' . $ticket->attachment) }}" alt="Lampiran Tiket" class="w-full h-auto object-cover max-h-72">
+                                <img src="{{ $attachmentUrl }}" alt="Lampiran Tiket" class="w-full h-auto object-cover max-h-72">
                             </div>
                         @else
-                            <a href="{{ asset('storage/' . $ticket->attachment) }}" target="_blank"
+                            <a href="{{ $attachmentUrl }}" target="_blank"
                                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-brand-600 font-semibold text-xs hover:bg-slate-100 transition">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                 Unduh Berkas Lampiran ({{ strtoupper($ext) }})
@@ -79,6 +82,41 @@
                     </div>
                 @endif
             </div>
+
+            @if($ticket->category === 'reimburse')
+                @php
+                    $reimbursementStatusLabels = ['pending' => 'Menunggu Approval', 'approved' => 'Disetujui', 'rejected' => 'Ditolak'];
+                    $reimbursementStatusClasses = ['pending' => 'bg-amber-50 text-amber-800', 'approved' => 'bg-emerald-50 text-emerald-800', 'rejected' => 'bg-red-50 text-red-800'];
+                @endphp
+                <section class="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-5">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900">Approval Reimbursement</h3>
+                            <p class="mt-1 text-xs text-slate-500">Nominal pengajuan: Rp {{ number_format((float) $ticket->reimbursement_amount, 0, ',', '.') }}</p>
+                        </div>
+                        @if($ticket->reimbursement_status)
+                            <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $reimbursementStatusClasses[$ticket->reimbursement_status] }}">
+                                {{ $reimbursementStatusLabels[$ticket->reimbursement_status] }}
+                            </span>
+                        @else
+                            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Belum diajukan untuk approval</span>
+                        @endif
+                    </div>
+                    @if($ticket->reimbursement_reviewed_at)
+                        <p class="mt-3 text-xs text-slate-500">
+                            Diputuskan oleh {{ $ticket->reimbursementReviewer?->name ?? 'Finance' }} pada {{ $ticket->reimbursement_reviewed_at->format('d/m/Y H:i') }}
+                        </p>
+                    @endif
+                    @if($ticket->reimbursement_review_note)
+                        <p class="mt-2 rounded-lg bg-white/70 p-3 text-xs text-slate-700">{{ $ticket->reimbursement_review_note }}</p>
+                    @endif
+                    @if($ticket->financeTransaction)
+                        <a href="{{ route('finance.transactions', ['period' => $ticket->financeTransaction->transaction_date->format('Y-m')]) }}" class="mt-3 inline-flex text-xs font-semibold text-emerald-800 hover:underline">
+                            Lihat transaksi kas · {{ $ticket->financeTransaction->status === 'paid' ? 'sudah dibayar' : 'belum dibayar' }}
+                        </a>
+                    @endif
+                </section>
+            @endif
 
             {{-- Replies Thread --}}
             <div class="space-y-4">

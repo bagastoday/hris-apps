@@ -4,6 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\ActivityLog;
 use App\Models\Announcement;
+use App\Models\Department;
+use App\Models\Employee;
+use App\Models\Position;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -75,6 +78,59 @@ class AnnouncementAndActivityLogTest extends TestCase
         $this->assertDatabaseHas('activity_logs', [
             'action' => 'create_announcement',
         ]);
+    }
+
+    public function test_employee_with_inferred_hr_admin_access_is_logged_as_hr_when_creating_announcement(): void
+    {
+        $department = Department::create([
+            'name' => 'Human Resources',
+            'code' => 'HRD',
+            'is_active' => true,
+        ]);
+        $position = Position::create([
+            'department_id' => $department->id,
+            'name' => 'HR Staff',
+            'level' => 'staff',
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'name' => 'Siti Utami',
+            'role' => 'karyawan',
+        ]);
+        Employee::create([
+            'user_id' => $user->id,
+            'employee_code' => 'EMP-HR-001',
+            'full_name' => 'Siti Utami',
+            'nik' => 'NIK-HR-001',
+            'join_date' => today()->toDateString(),
+            'department_id' => $department->id,
+            'position_id' => $position->id,
+            'employment_status' => 'aktif',
+        ]);
+
+        $this->assertSame('karyawan', $user->fresh()->role);
+        $this->assertTrue($user->fresh()->hasHrAdminAccess());
+
+        $this->actingAs($user)->post(route('announcements.store'), [
+            'title' => 'Informasi HR untuk Pegawai',
+            'content' => 'Informasi dari tim HR.',
+            'category' => 'umum',
+            'badge_color' => 'blue',
+        ])->assertRedirect(route('announcements.index'));
+
+        $this->assertDatabaseHas('activity_logs', [
+            'user_id' => $user->id,
+            'user_role' => 'hr',
+            'user_title' => 'HR Staff',
+            'action' => 'create_announcement',
+        ]);
+
+        $this->actingAs(User::factory()->create(['role' => 'hr']))
+            ->get(route('activity-logs.index'))
+            ->assertOk()
+            ->assertSee('Siti Utami')
+            ->assertSee('HR Staff')
+            ->assertDontSee('>karyawan</span>', false);
     }
 
     /**

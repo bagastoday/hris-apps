@@ -8,8 +8,10 @@ use App\Models\ActivityLog;
 use App\Models\Ticket;
 use App\Models\TicketReply;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class TicketController extends Controller
 {
@@ -76,7 +78,14 @@ class TicketController extends Controller
         $ticket->forceFill([
             'team_last_read_reply_id' => $ticket->replies()->max('id') ?? 0,
         ])->save();
-        $ticket->load(['user.employee.department', 'user.employee.position', 'assignedTo', 'replies.user']);
+        $ticket->load([
+            'user.employee.department',
+            'user.employee.position',
+            'assignedTo',
+            'replies.user',
+            'reimbursementReviewer',
+            'financeTransaction',
+        ]);
 
         return view('admin.tickets.show', compact('ticket'));
     }
@@ -100,9 +109,9 @@ class TicketController extends Controller
         }
 
         if ($validated['status'] === 'resolved' && !$ticket->resolved_at) {
-            $ticket->resolved_at = now();
+            $ticket->resolved_at = Carbon::now();
         } elseif ($validated['status'] === 'closed' && !$ticket->closed_at) {
-            $ticket->closed_at = now();
+            $ticket->closed_at = Carbon::now();
         }
 
         if (!$ticket->assigned_to) {
@@ -153,7 +162,7 @@ class TicketController extends Controller
         if (!empty($validated['change_status'])) {
             $ticket->status = $validated['change_status'];
             if ($validated['change_status'] === 'resolved' && !$ticket->resolved_at) {
-                $ticket->resolved_at = now();
+                $ticket->resolved_at = Carbon::now();
             }
         } elseif ($ticket->status === 'open') {
             $ticket->status = 'in_progress';
@@ -222,23 +231,42 @@ class TicketController extends Controller
      */
     public function karyawanStore(Request $request)
     {
+        $attachmentRules = $request->input('category') === 'reimburse'
+            ? ['required', 'image', 'mimes:jpg,jpeg,png', 'max:5120']
+            : ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'];
+
         $validated = $request->validate([
             'title' => 'required|string|max:200',
             'category' => 'required|in:' . implode(',', array_keys(Ticket::CATEGORY_LABELS)),
             'priority' => 'required|in:rendah,sedang,tinggi,darurat',
             'description' => 'required|string|min:10',
-            'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'reimbursement_amount' => [
+                Rule::requiredIf($request->input('category') === 'reimburse'),
+                'nullable',
+                'integer',
+                'min:1',
+                'max:9999999999999',
+            ],
+            'attachment' => $attachmentRules,
+            'is_anonymous' => 'nullable|boolean',
         ], [
             'title.required' => 'Subjek atau judul tiket wajib diisi.',
             'category.required' => 'Pilih kategori pengaduan / bantuan.',
             'description.required' => 'Jelaskan kronologi atau detail kendala kamu.',
             'description.min' => 'Deskripsi minimal 10 karakter.',
+            'reimbursement_amount.required' => 'Nominal reimbursement wajib diisi.',
+            'reimbursement_amount.min' => 'Nominal reimbursement harus lebih dari Rp0.',
+            'attachment.required' => 'Foto bukti wajib dilampirkan untuk tiket reimbursement.',
+            'attachment.image' => 'Bukti reimbursement harus berupa file gambar.',
             'attachment.max' => 'Ukuran berkas lampiran maksimal 5MB.',
         ]);
 
         $attachmentPath = null;
         if ($request->hasFile('attachment')) {
-            $attachmentPath = $request->file('attachment')->store('ticket_attachments', 'public');
+            $attachmentPath = $request->file('attachment')->store(
+                $validated['category'] === 'reimburse' ? 'reimbursement_proofs' : 'ticket_attachments',
+                $validated['category'] === 'reimburse' ? 'local' : 'public'
+            );
         }
 
         $ticket = Ticket::create([
@@ -250,6 +278,8 @@ class TicketController extends Controller
             'description' => $validated['description'],
             'attachment' => $attachmentPath,
             'is_anonymous' => false,
+            'reimbursement_amount' => $validated['reimbursement_amount'] ?? null,
+            'reimbursement_status' => $validated['category'] === 'reimburse' ? 'pending' : null,
             'status' => 'open',
         ]);
 
@@ -323,6 +353,34 @@ class TicketController extends Controller
         }
 
         return back()->with('success', 'Tanggapan kamu berhasil dikirimkan.');
+    }
+
+    public function reimbursementProof(Ticket $ticket)
+    {
+        abort_unless($ticket->category === 'reimburse' && $ticket->reimbursement_status, 404);
+        abort_unless(
+            $ticket->user_id === Auth::id() || Auth::user()->isFinance(),
+            403,
+            'Bukti reimbursement hanya dapat diakses oleh pemilik tiket dan tim Finance.'
+        );
+        abort_unless(Storage::disk('local')->exists($ticket->attachment), 404);
+
+        $stream = Storage::disk('local')->readStream($ticket->attachment);
+        abort_unless(is_resource($stream), 404);
+        $mimeType = match (strtolower(pathinfo($ticket->attachment, PATHINFO_EXTENSION))) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            default => 'application/octet-stream',
+        };
+
+        return response()->stream(function () use ($stream): void {
+            fpassthru($stream);
+            fclose($stream);
+        }, 200, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     private function teamTickets()

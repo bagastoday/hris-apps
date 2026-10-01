@@ -33,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
             $pendingLeaveCount = 0;
             $draftPayrollCount = 0;
             $unpaidPayrollCount = 0;
+            $pendingReimbursementCount = 0;
 
             if ($user && ($user->isFinance() || $user->hasHrAdminAccess())) {
                 $query = $this->teamTicketQuery($user);
@@ -44,17 +45,21 @@ class AppServiceProvider extends ServiceProvider
                         ->whereIn('status', ['processed', 'paid']))
                         ->where('payment_status', '!=', 'paid')
                         ->count();
+                    $pendingReimbursementCount = Ticket::where('category', 'reimburse')
+                        ->where('reimbursement_status', 'pending')
+                        ->count();
                 } else {
                     $pendingLeaveCount = Leave::where('status', 'pending')->count();
                 }
             }
 
-            $financeActionCount = $draftPayrollCount + $unpaidPayrollCount;
+            $financeActionCount = $draftPayrollCount + $unpaidPayrollCount + $pendingReimbursementCount;
             $view->with(compact(
                 'ticketUnreadCount',
                 'pendingLeaveCount',
                 'draftPayrollCount',
                 'unpaidPayrollCount',
+                'pendingReimbursementCount',
                 'financeActionCount'
             ));
         });

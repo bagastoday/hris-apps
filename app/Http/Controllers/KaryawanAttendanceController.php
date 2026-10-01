@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Announcement;
 use App\Models\Attendance;
 use App\Models\PayrollItem;
+use App\Models\RosterSchedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -19,7 +20,9 @@ class KaryawanAttendanceController extends Controller
         $employee = $user->employee;
 
         $today = today();
+        $isScheduledWorkday = !$today->isWeekend();
         $todayAttendance = null;
+        $todaySchedule = null;
         $recentAttendances = collect();
         $monthlyStats = [
             'hadir' => 0,
@@ -29,6 +32,9 @@ class KaryawanAttendanceController extends Controller
         ];
 
         if ($employee) {
+            $todaySchedule = RosterSchedule::where('employee_id', $employee->id)
+                ->whereDate('date', $today)
+                ->first();
             $monthAttendances = Attendance::where('employee_id', $employee->id)
                 ->whereYear('date', $today->year)
                 ->whereMonth('date', $today->month)
@@ -51,7 +57,10 @@ class KaryawanAttendanceController extends Controller
 
         $pinnedAnnouncements = Announcement::active()->pinned()->latest('published_at')->take(3)->get();
 
-        return view('karyawan.home', compact('employee', 'todayAttendance', 'recentAttendances', 'today', 'monthlyStats', 'pinnedAnnouncements'));
+        $expectedStartTime = substr($todaySchedule?->start_time ?? RosterSchedule::DEFAULT_START_TIME, 0, 5);
+        $expectedEndTime = substr($todaySchedule?->end_time ?? RosterSchedule::DEFAULT_END_TIME, 0, 5);
+
+        return view('karyawan.home', compact('employee', 'todayAttendance', 'todaySchedule', 'expectedStartTime', 'expectedEndTime', 'isScheduledWorkday', 'recentAttendances', 'today', 'monthlyStats', 'pinnedAnnouncements'));
     }
 
     public function payslips()
@@ -106,8 +115,11 @@ class KaryawanAttendanceController extends Controller
         $now = now();
         $currentTime = $now->format('H:i:s');
 
-        // Batas keterlambatan adalah jam 08:30 WIB
-        $isLate = $now->format('H:i') > '08:30';
+        $schedule = RosterSchedule::where('employee_id', $employee->id)
+            ->whereDate('date', $today)
+            ->first();
+        $expectedStartTime = substr($schedule?->start_time ?? RosterSchedule::DEFAULT_START_TIME, 0, 5);
+        $isLate = !$today->isWeekend() && $now->format('H:i') > $expectedStartTime;
         $status = $isLate ? 'terlambat' : 'hadir';
 
         Attendance::updateOrCreate(

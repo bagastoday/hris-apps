@@ -92,14 +92,13 @@
                             @endif
                         </div>
 
-                        <label class="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-brand-700 hover:bg-brand-800 ring-2 ring-white flex items-center justify-center cursor-pointer shadow-sm transition">
+                        <button id="avatar-upload-trigger" type="button" aria-label="Pilih foto profil" class="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-brand-700 hover:bg-brand-800 ring-2 ring-white flex items-center justify-center cursor-pointer shadow-sm transition">
                             <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
                             </svg>
-                            <input type="file" name="avatar" form="edit-profile-form" accept="image/jpeg,image/png,image/webp" class="hidden"
-                                   onchange="previewAvatar(this)">
-                        </label>
+                        </button>
+                        <input id="avatar-input" type="file" name="avatar" form="edit-profile-form" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="previewAvatar(this)">
                     </div>
                     <p class="text-[11px] text-slate-400 mt-2.5">JPG, PNG, WEBP &middot; maks 2 MB</p>
                 </div>
@@ -153,7 +152,62 @@
         </div>
     </div>
 
+    <div id="avatar-guidance-modal" role="dialog" aria-modal="true" aria-labelledby="avatar-guidance-title" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+        <section class="w-full max-w-md overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl">
+            <div class="flex items-start justify-between border-b border-slate-100 px-5 py-4">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3" stroke-width="1.8"/></svg>
+                    </span>
+                    <div>
+                        <h2 id="avatar-guidance-title" class="text-sm font-bold text-slate-900">Panduan Foto Profil</h2>
+                        <p class="mt-0.5 text-xs text-slate-500">Pilih foto yang jelas dan profesional.</p>
+                    </div>
+                </div>
+                <button type="button" data-close-avatar-guidance aria-label="Tutup panduan" class="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m6 6 12 12M18 6 6 18"/></svg>
+                </button>
+            </div>
+            <div class="px-5 py-4">
+                <ul class="space-y-3 text-sm text-slate-700">
+                    <li class="flex gap-2.5"><span class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600"></span>Gunakan latar belakang putih atau polos dengan pencahayaan yang cukup.</li>
+                    <li class="flex gap-2.5"><span class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600"></span>Hadap kamera dengan wajah terlihat jelas dan berada di tengah foto.</li>
+                    <li class="flex gap-2.5"><span class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600"></span>Gunakan pakaian formal atau rapi; hindari kacamata hitam, filter, dan objek yang menutupi wajah.</li>
+                    <li class="flex gap-2.5"><span class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600"></span>Format JPG, PNG, atau WEBP, ukuran maksimal 2 MB.</li>
+                </ul>
+            </div>
+            <div class="flex justify-end gap-2 border-t border-slate-100 bg-slate-50/70 px-5 py-4">
+                <button type="button" data-close-avatar-guidance class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Nanti</button>
+                <button id="choose-avatar-button" type="button" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700">Pilih Foto</button>
+            </div>
+        </section>
+    </div>
+
 <script>
+const avatarInput = document.getElementById('avatar-input');
+const avatarGuidanceModal = document.getElementById('avatar-guidance-modal');
+
+document.getElementById('avatar-upload-trigger').addEventListener('click', () => {
+    avatarGuidanceModal.classList.remove('hidden');
+});
+
+document.querySelectorAll('[data-close-avatar-guidance]').forEach((button) => {
+    button.addEventListener('click', () => avatarGuidanceModal.classList.add('hidden'));
+});
+
+document.getElementById('choose-avatar-button').addEventListener('click', () => {
+    avatarGuidanceModal.classList.add('hidden');
+    avatarInput.click();
+});
+
+avatarGuidanceModal.addEventListener('click', (event) => {
+    if (event.target === avatarGuidanceModal) avatarGuidanceModal.classList.add('hidden');
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') avatarGuidanceModal.classList.add('hidden');
+});
+
 function previewAvatar(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();

@@ -5,11 +5,13 @@ namespace Tests\Feature;
 use App\Models\Attendance;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\FinanceTransaction;
 use App\Models\PayrollRun;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\TestCase;
 
 class FinancePayrollAccessTest extends TestCase
@@ -254,6 +256,149 @@ class FinancePayrollAccessTest extends TestCase
             ->assertSessionHasErrors('period');
 
         $this->assertDatabaseMissing('payroll_runs', ['period' => '2025-02']);
+    }
+
+    public function test_weekend_attendance_is_added_as_separate_payroll_overtime(): void
+    {
+        [$finance, $employee] = $this->createFinanceEmployee();
+        foreach ([
+            ['2025-02-08', '09:00:00', '17:00:00'],
+            ['2025-02-09', '09:00:00', '12:00:00'],
+            ['2025-02-10', '08:00:00', '17:00:00'],
+            ['2025-02-15', '09:00:00', null],
+        ] as [$date, $checkIn, $checkOut]) {
+            Attendance::create([
+                'employee_id' => $employee->id,
+                'date' => $date,
+                'check_in' => $checkIn,
+                'check_out' => $checkOut,
+                'status' => 'hadir',
+            ]);
+        }
+
+        $this->actingAs($finance)
+            ->post(route('finance.payroll.store'), ['period' => '2025-02'])
+            ->assertRedirect(route('finance.index', ['period' => '2025-02']));
+
+        $run = PayrollRun::where('period', '2025-02')->firstOrFail();
+        $item = $run->items()->where('employee_id', $employee->id)->firstOrFail();
+        $this->assertSame(2, $item->overtime_days);
+        $this->assertEquals(400000, $item->overtime_pay);
+        $this->assertEquals(401000, $item->net_pay);
+
+        $this->put(route('finance.payroll.items.update', [$run, $item]), [
+            'allowance' => 100,
+            'deduction' => 50,
+        ])->assertRedirect();
+        $this->assertDatabaseHas('payroll_items', [
+            'id' => $item->id,
+            'overtime_pay' => 400000,
+            'net_pay' => 401050,
+        ]);
+    }
+
+    public function test_finance_can_record_reimbursements_and_export_cashflow_and_payroll(): void
+    {
+        [$finance, $employee] = $this->createFinanceEmployee();
+        $this->travelTo(now()->setDate(2025, 2, 28)->setTime(10, 0));
+        $this->actingAs($finance);
+
+        $this->get(route('finance.transactions', ['period' => '2025-02']))
+            ->assertOk()
+            ->assertSee('Kas & Pengeluaran')
+            ->assertSee('Ekspor Arus Kas')
+            ->assertSee('Ekspor Payroll');
+
+        $this->post(route('finance.transactions.store'), [
+            'period' => '2025-02',
+            'type' => 'expense',
+            'category' => 'reimbursement',
+            'description' => 'Penggantian bensin perjalanan dinas',
+            'employee_id' => $employee->id,
+            'amount' => 150000,
+            'transaction_date' => '2025-02-18',
+            'status' => 'pending',
+        ])->assertRedirect(route('finance.transactions', ['period' => '2025-02']));
+
+        $reimbursement = FinanceTransaction::firstOrFail();
+        $this->assertDatabaseHas('finance_transactions', [
+            'id' => $reimbursement->id,
+            'employee_id' => $employee->id,
+            'status' => 'pending',
+            'amount' => 150000,
+        ]);
+
+        $this->post(route('finance.transactions.paid', $reimbursement), [
+            'paid_date' => '2025-02-28',
+        ])->assertRedirect(route('finance.transactions', ['period' => '2025-02']));
+
+        $this->post(route('finance.transactions.store'), [
+            'period' => '2025-02',
+            'type' => 'expense',
+            'category' => 'operasional',
+            'description' => 'Biaya operasional belum dibayar',
+            'amount' => 75000,
+            'transaction_date' => '2025-02-19',
+            'status' => 'pending',
+        ])->assertRedirect(route('finance.transactions', ['period' => '2025-02']));
+
+        $this->post(route('finance.transactions.store'), [
+            'period' => '2025-02',
+            'type' => 'income',
+            'category' => 'pendapatan',
+            'description' => 'Pemasukan operasional',
+            'amount' => 500000,
+            'transaction_date' => '2025-02-28',
+            'status' => 'paid',
+            'paid_date' => '2025-02-28',
+        ])->assertRedirect(route('finance.transactions', ['period' => '2025-02']));
+
+        $this->post(route('finance.payroll.store'), ['period' => '2025-02'])->assertRedirect();
+        $payroll = PayrollRun::where('period', '2025-02')->firstOrFail();
+        $this->post(route('finance.payroll.finalize', $payroll))->assertRedirect();
+        $item = $payroll->items()->where('employee_id', $employee->id)->firstOrFail();
+        $this->post(route('finance.payroll.items.paid', [$payroll, $item]))->assertRedirect();
+
+        $cashflow = $this->get(route('finance.exports.cashflow', ['period' => '2025-02']));
+        $cashflow->assertOk()->assertDownload('arus-kas-2025-02.xlsx');
+        $this->assertStringStartsWith('PK', $cashflow->streamedContent());
+
+        $temporaryFile = tempnam(sys_get_temp_dir(), 'cashflow-test');
+        file_put_contents($temporaryFile, $cashflow->streamedContent());
+        try {
+            $rows = IOFactory::load($temporaryFile)->getActiveSheet()->toArray();
+            $descriptions = array_column(array_slice($rows, 3), 5);
+            $this->assertContains('Penggantian bensin perjalanan dinas', $descriptions);
+            $this->assertContains('Pemasukan operasional', $descriptions);
+            $this->assertContains('Pembayaran payroll 2025-02', $descriptions);
+            $this->assertNotContains('Biaya operasional belum dibayar', $descriptions);
+        } finally {
+            unlink($temporaryFile);
+        }
+
+        $payrollExport = $this->get(route('finance.exports.payroll', ['period' => '2025-02']));
+        $payrollExport->assertOk()->assertDownload('payroll-2025-02.xlsx');
+        $this->assertStringStartsWith('PK', $payrollExport->streamedContent());
+    }
+
+    public function test_regular_employee_cannot_access_finance_transactions_or_exports(): void
+    {
+        $user = User::create([
+            'name' => 'Regular Employee',
+            'email' => 'regular@example.com',
+            'password' => Hash::make('password'),
+            'role' => 'karyawan',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('finance.transactions'))
+            ->assertRedirect(route('karyawan.home'));
+        $this->actingAs($user)
+            ->get(route('finance.exports.cashflow', ['period' => '2025-02']))
+            ->assertRedirect(route('karyawan.home'));
+        $this->actingAs($user)
+            ->get(route('finance.exports.payroll', ['period' => '2025-02']))
+            ->assertRedirect(route('karyawan.home'));
     }
 
     public function test_regular_employee_cannot_open_or_change_finance_payroll(): void

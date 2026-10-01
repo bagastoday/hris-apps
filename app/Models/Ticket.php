@@ -42,12 +42,20 @@ class Ticket extends Model
         'is_anonymous',
         'resolved_at',
         'closed_at',
+        'reimbursement_amount',
+        'reimbursement_status',
+        'reimbursement_review_note',
+        'reimbursement_reviewed_by',
+        'reimbursement_reviewed_at',
+        'finance_transaction_id',
     ];
 
     protected $casts = [
         'is_anonymous' => 'boolean',
         'resolved_at' => 'datetime',
         'closed_at' => 'datetime',
+        'reimbursement_amount' => 'decimal:2',
+        'reimbursement_reviewed_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
@@ -63,6 +71,16 @@ class Ticket extends Model
     public function replies(): HasMany
     {
         return $this->hasMany(TicketReply::class)->oldest();
+    }
+
+    public function reimbursementReviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reimbursement_reviewed_by');
+    }
+
+    public function financeTransaction(): BelongsTo
+    {
+        return $this->belongsTo(FinanceTransaction::class);
     }
 
     public function scopeWithUnreadForTeam(Builder $query): Builder

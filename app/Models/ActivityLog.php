@@ -14,6 +14,7 @@ class ActivityLog extends Model
         'user_id',
         'user_name',
         'user_role',
+        'user_title',
         'action',
         'description',
         'subject_type',
@@ -33,11 +34,15 @@ class ActivityLog extends Model
     public static function record(string $action, string $description, ?Model $subject = null): self
     {
         $user = Auth::user();
+        $isHrAdmin = $user?->hasHrAdminAccess() ?? false;
 
         return self::create([
             'user_id' => $user?->id,
             'user_name' => $user?->name ?? 'Sistem',
-            'user_role' => $user?->role ?? 'system',
+            'user_role' => $isHrAdmin ? 'hr' : ($user?->role ?? 'system'),
+            'user_title' => $isHrAdmin
+                ? ($user->employee?->position?->name ?? $user->display_title)
+                : null,
             'action' => $action,
             'description' => $description,
             'subject_type' => $subject ? get_class($subject) : null,

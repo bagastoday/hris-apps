@@ -91,6 +91,7 @@
                 <tr class="text-left text-[11px] uppercase tracking-wide text-slate-400 border-b border-slate-100 bg-slate-50/50">
                     <th class="px-5 py-3.5 font-medium">Pegawai</th>
                     <th class="px-4 py-3.5 font-medium">Departemen</th>
+                    <th class="px-4 py-3.5 font-medium">Jadwal</th>
                     <th class="px-4 py-3.5 font-medium">Jam Masuk</th>
                     <th class="px-4 py-3.5 font-medium">Jam Pulang</th>
                     <th class="px-4 py-3.5 font-medium">Status</th>
@@ -113,6 +114,10 @@
                             </div>
                         </td>
                         <td class="px-4 py-4 text-slate-600">{{ $att->employee->department->name ?? '-' }}</td>
+                        @php($schedule = $schedules->get($att->employee_id))
+                        <td class="px-4 py-4 whitespace-nowrap text-slate-600">
+                            {{ substr($schedule?->start_time ?? \App\Models\RosterSchedule::DEFAULT_START_TIME, 0, 5) }} - {{ substr($schedule?->end_time ?? \App\Models\RosterSchedule::DEFAULT_END_TIME, 0, 5) }}
+                        </td>
                         <td class="px-4 py-4 text-slate-600">{{ $fmt($att->check_in) }}</td>
                         <td class="px-4 py-4 text-slate-600">{{ $fmt($att->check_out) }}</td>
                         <td class="px-4 py-4">
@@ -141,7 +146,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="px-5 py-12 text-center text-slate-400">
+                        <td colspan="8" class="px-5 py-12 text-center text-slate-400">
                             {{ $search !== '' ? 'Tidak ada data absensi yang cocok dengan pencarian ini.' : 'Belum ada data absensi pada tanggal ini.' }}
                         </td>
                     </tr>

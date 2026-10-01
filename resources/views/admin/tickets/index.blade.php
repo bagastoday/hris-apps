@@ -142,6 +142,11 @@
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-700">
                                     {{ $t->category_label }}
                                 </span>
+                                @if($t->category === 'reimburse' && $t->reimbursement_status)
+                                    <span class="mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $t->reimbursement_status === 'approved' ? 'bg-emerald-50 text-emerald-700' : ($t->reimbursement_status === 'rejected' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700') }}">
+                                        Approval {{ ['pending' => 'Menunggu', 'approved' => 'Disetujui', 'rejected' => 'Ditolak'][$t->reimbursement_status] }}
+                                    </span>
+                                @endif
                             </td>
                             <td class="px-5 py-4">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold {{ $t->priority_badge_class }}">

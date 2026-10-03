@@ -32,6 +32,7 @@
             }
         }
     </script>
+    <link rel="stylesheet" href="{{ asset('css/buttons.css') }}">
 </head>
 <body class="relative isolate font-sans antialiased min-h-screen overflow-x-hidden bg-gradient-to-br from-sky-50 via-white to-indigo-50 flex items-center justify-center p-4">
 

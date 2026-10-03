@@ -33,6 +33,7 @@
             }
         }
     </script>
+    <link rel="stylesheet" href="{{ asset('css/buttons.css') }}">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         [x-cloak] { display: none !important; }
@@ -268,19 +269,13 @@
                         </div>
                     </div>
 
-                    {{-- Data singkat --}}
-                    <div class="px-5 py-3.5 flex items-center gap-2 border-b border-slate-100">
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-brand-50 text-brand-700">
-                            {{ auth()->user()->display_title }}
-                        </span>
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-50 text-slate-500">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                            {{ auth()->user()->nik ?? auth()->user()->employee?->employee_code ?? auth()->user()->id }}
-                        </span>
+                    <div class="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-slate-100 px-5 py-3 text-[11px] text-slate-500">
+                        <span class="font-semibold text-slate-700">{{ auth()->user()->display_title }}</span>
+                        <span aria-hidden="true" class="text-slate-300">&middot;</span>
+                        <span>{{ auth()->user()->nik ?? auth()->user()->employee?->employee_code ?? auth()->user()->id }}</span>
                         @if(auth()->user()->employee?->department)
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-50 text-slate-500 truncate">
-                            {{ auth()->user()->employee->department->name }}
-                        </span>
+                            <span aria-hidden="true" class="text-slate-300">&middot;</span>
+                            <span>{{ auth()->user()->employee->department->name }}</span>
                         @endif
                     </div>
 

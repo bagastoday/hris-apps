@@ -32,6 +32,7 @@
             }
         }
     </script>
+    <link rel="stylesheet" href="{{ asset('css/buttons.css') }}">
 </head>
 <body class="font-sans antialiased bg-slate-50 text-slate-900">
     <!-- Navbar -->

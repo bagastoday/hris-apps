@@ -33,6 +33,7 @@
             }
         }
     </script>
+    <link rel="stylesheet" href="{{ asset('css/buttons.css') }}">
     <style>
         .wave-banner { position: relative; overflow: hidden; }
         .wave-banner::after {

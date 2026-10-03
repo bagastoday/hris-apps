@@ -1,0 +1,44 @@
+button {
+    font-family: inherit;
+}
+
+button[class],
+a[class*="bg-"][class*="px-"][class*="py-"][class*="text-white"] {
+    border-radius: 0.5rem;
+    box-shadow: none;
+    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+button[class]:not(:disabled):hover,
+a[class*="bg-"][class*="px-"][class*="py-"][class*="text-white"]:hover {
+    transform: translateY(-1px);
+}
+
+button[class]:active,
+a[class*="bg-"][class*="px-"][class*="py-"][class*="text-white"]:active {
+    transform: translateY(0);
+}
+
+button[class]:focus-visible,
+a[class*="bg-"][class*="px-"][class*="py-"][class*="text-white"]:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+button[class*="from-brand-"],
+a[class*="from-brand-"][class*="text-white"] {
+    background-color: #2563eb;
+    background-image: none;
+}
+
+button[class*="from-brand-"]:hover,
+a[class*="from-brand-"][class*="text-white"]:hover {
+    background-color: #1d4ed8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    button[class],
+    a[class*="bg-"][class*="px-"][class*="py-"][class*="text-white"] {
+        transition: none;
+    }
+}
